@@ -1,0 +1,13 @@
+{
+	project: "Sample project"
+	company: {
+		name: "ACME, inc"
+		url: "http://acme.inc"
+	}
+	tasks: [
+		{name:"design"}
+		{name:"development"}
+		{name:"testing"}
+		{name:"documentation"}
+	]
+}

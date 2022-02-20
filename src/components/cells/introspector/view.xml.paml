@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<jsx::import(name=json,from=std.core)
+	<jsx::import(component=controls/scrollable,as=Scrollable)
+	<jsx::import(name=typename,from=std.core)
+	<jsx::import(name=type,from=std.core)
+	<jsx::template(name=formatter)
+		<jsx::argument(name=level,default=0)
+		<jsx::if(test="gt(level, 1)")
+			<code:‥>
+		<jsx::elif(test="_ === true || _ === false || _ === undefined || _ === null")
+			<code.json-symbol
+				<jsx::value:"" + _
+		<jsx::elif(test="typeof(_) == 'string'")
+			<code.json-string
+				<jsx::value(select=_)
+		<jsx::elif(test="typeof(_) == 'number'")
+			<code.json-number
+				<jsx::value:"" + _
+		<jsx::elif(test="_ instanceof Function")
+			<span.json-function:
+				<jsx::value:_.name || ""
+		<jsx::elif(test="_ instanceof Array")
+			<ul.json-array
+				<li.json-array-item(jsx::map=_)
+					<jsx::attribute(name=data-index):"" + index
+					<jsx::apply(template=formatter)
+						<jsx::argument(name=level,select=level):_ + 1
+		<jsx::else
+			<ul.json-map-
+				<li.-item-(jsx::map=_)
+					<span.-key
+						<jsx::value:"" + index
+					<span.-value
+						<jsx::apply(template=formatter)
+							<jsx::argument(name=level,select=level):_ + 1
+	<div.cells-Introspector-
+
+	# ==========================================================================
+	# COMPONENTS
+	# ==========================================================================
+		<jsx::if(test=data.listComponents)
+			<div.block-panel.-components-
+				<div.block-panel-header
+					<h4:Components
+				<div.block-panel-body.-panel
+					<jsx::Scrollable(jsx::ref=components)
+						<ul.block-list
+							<li.block-list-item.-component-(jsx::map=data.components,on::click=action:onComponentClick)
+								#<jsx::var(name=selected,select=data.component)
+								<jsx::attribute(name=data-index):"" + index
+								<span.-type:
+									<jsx::value:_.type
+								<span.-id:
+									<jsx::value:"" + _.id
+		<div.block-panel.-graph-
+			<div.block-panel-header
+				<h4:Network
+			<div.block-panel-body(jsx::ref=graph)
+				<jsx::style(name=height,select=data.height)
+				# <div.-tooltip-(jsx::ref=tooltip)
+				# 	<div.-body
+				# 		<jsx::if(select=data.focus)
+				# 			<div:
+				# 				<span:Cell #><jsx::value(select=data.focus.id):> ― <jsx::value(select=data.focus.name)>
+				# 			<div:takes:
+				# 				<jsx::if(select=data.focus._takes,test="typeof(_)=='undefined'")
+				# 					No value
+				# 				<jsx::elif(select=data.focus._takes,test="_ instanceof Array")
+				# 					<jsx::value(select=data.focus._takes):"[" + __map__(_,function(v){return v.name}).join(", ") + "]"
+				# 				<jsx::elif(select=data.focus._takes,test="_ instanceof Object")
+				# 					<jsx::value(select=data.focus._takes):"{" + __map__(_, function(v,k){return v.name}).join(", ") + "}"
+				# 			<div:value:
+				# 				<code
+				# 					<jsx::value(select=data.focus.value):json(_)
+				<svg.-svg(width=1000,height=1000,xmlns="http://www.w3.org/2000/svg",jsx::ref=svg)
+					# SEE: http://stackoverflow.com/questions/11808860/how-to-place-arrow-head-triangles-on-svg-lines
+					# NOTE: Does not seem to work
+					<defs
+						<marker(id="dot",markerWidth="8",markerHeight="8",refX="4",refY="4")
+							<circle(cx=4,cy=4,r=2)
+						<marker(id="arrow",markerWidth="8",markerHeight="8",refX="2",refY="4",orient="auto")
+							<path(d="M1,1 L1,7 L7,4 L1,1",style="fill: #000000;")
+						<pattern#grid.grid-pattern(x=-5,y=-5,width=40,height=40,patternUnits="userSpaceOnUse")
+							# This is the origin (0,0) with an offset (5,5)
+							<circle.dot(cx=5,cy=5,r=0.75)
+							<circle.minor.dot(cx=25,cy=5,r=0.75)
+							<circle.minor.dot(cx=5,cy=25,r=0.75)
+							<circle.minor.dot(cx=25,cy=25,r=0.75)
+					<g.layer.grid
+						<rect.grid(x=0,y=0,width=1000,height=1000,fill="url(#grid)",data-offset="[-5,-5]")
+					<jsx::if(select=data.viz)
+						#<g(on::mouseenter,data-focus=none)
+						<g(data-focus=none)
+							<g.-edges
+								<jsx::for(select="data.viz.links",as="edge")
+									<path.-edge(style='marker-end: url(#arrow);marker-start:url(#dot);')
+										<jsx::attribute(name="d",select="edge",as="edge",always)
+											(function(edge){
+												const x0 =edge.source.x;
+												const y0 =edge.source.y;
+												const x1 =edge.target.x;
+												const y1 =edge.target.y;
+												const w  = x1 - x0;
+												const h  = y1 - y0;
+												const d  = Math.sqrt(w*w+h*h);
+												const th = Math.acos(w/d);
+												const ph = th;
+												const r  = 30;
+												const dx0 = -0 * Math.cos(ph) * r;
+												const dy0 = -0 * Math.sin(ph) * r;
+												const dx1 =  0 * Math.cos(ph) * r;
+												const dy1 =  0 * Math.sin(ph) * r;
+												return ("M" + Math.floor(x0-dx0) + " " + Math.floor(y0-dy0) + " L " + Math.floor(x1-dx1) + " " + Math.floor(y1-dy1));
+											}(edge))
+							<g.-nodes
+								<jsx::for(select="data.viz.nodes",as="cell")
+									<circle.-node(r=15,data-type=node,on::click="action:pickNode",on::mouseenter)
+										<jsx::attribute(name=data-index,select="_.index")
+										<jsx::attribute(name="cx",select="cell.x")
+										<jsx::attribute(name="cy",select="cell.y")
+
+				<jsx::if(select=data.viz)
+					<div.-labels-
+						<jsx::for(select="data.viz.nodes",as="cell")
+							<div.-label-(text-anchor=middle,dy=6,data-type=node,on::click="action:pickNode",on::mouseenter,data-focus=cell)
+								<jsx::attribute(name=data-index,select="_.index")
+								<jsx::style(name="left",select="cell.x")
+								<jsx::style(name="top",select="cell.y"):_ - 2
+								<span.-name
+									<jsx::value(select=cell.name):_.substring(0,2)
+							<div.-label-(text-anchor=middle,dy=45,data-type=node,on::click="action:pickNode")
+								<jsx::attribute(name=data-index,select="_.index")
+								<jsx::style(name="left",select="cell.x")
+								<jsx::style(name="top",select="cell.y")
+								<span.-type
+									<jsx::value(select=cell.type)
+		<jsx::if(test=data.listCells)
+			# NOTE: We remove that
+			# <div.block-panel.-cells-
+			# 	<div.block-panel-header
+			# 		<h5:Cells
+			# 	<div.block-panel-body.-panel
+			# 		<jsx::Scrollable(jsx::ref=cells)
+			# 			<ul.block-list
+			# 				<li.block-list-item.-cell-(jsx::map=data.cells,jsx::extractor=_.updated,cellpadding=0,cellspacing=0)
+			# 					<div
+			# 						<span.-name-
+			# 							<jsx::attribute(name=title,select=_.localAddress)
+			# 							<span.-value
+			# 								<jsx::value(select=_.name)
+			# 						<span.-type-
+			# 							<span.-value
+			# 								<jsx::value(select=_,always):typename(type(_)).split(".").slice(-1)
+			# 						<div.-value-
+			# 							<code.-value
+			# 								<jsx::apply(template=formatter,select=_.value,always)
+			# 									<jsx::argument(name=level):0
+
+# EOF

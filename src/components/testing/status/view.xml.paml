@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<div.Status-
+		<jsx::attribute(name=data-status,select=data.status.overall)
+		<div.-status-
+			<div.-overall
+				<jsx::value(select=data.status.overall)
+		<div.-tests-
+			<jsx::for(select=data.tests)
+				<div.-test
+					<jsx::attribute(name=data-status,select=_.status.__name__):_.toLowerCase()
+# EOF

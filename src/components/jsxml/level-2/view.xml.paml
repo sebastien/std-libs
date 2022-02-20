@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	# NOTE: This component exercises all the basic tags of JSXML
+	# FIXME: @jsx:as should be @jsx:ref
+	<style
+		.icon-square {
+			display: inline-block;
+			width: 1em;
+			height: 1em;
+			background: black;
+		}
+		.bg-green {
+			background: #00FF00;
+		}
+
+		.bg-red {
+			background: #FF0000;
+		}
+	<div.Texto
+		<h1:
+			JSXML-Level 2 Test Suite
+		<p
+			This test suite exercises control-flow tags in JSXML. The second and third
+			column of each table should be the same, with the second one
+			being the expected result.
+		<p
+			The features tested are the following
+		<ul
+			<li:
+				<a(href=#jsx:for)
+					<code:jsx:for>
+			<li:
+				<a(href=#@jsx:map)
+					<code:@jsx:map>
+			<li:
+				<a(href=#jsx:if)
+					<code:jsx:if>, <code:jsx:elif> and <code:jsx:else>
+			<li:	
+				<a(href=#@jsx:if)
+					<code:@jsx:if>
+
+
+		# ---------------------------------------------------------------------
+		#
+		# JSX:FOR
+		#
+		# ---------------------------------------------------------------------
+		<section
+			<h3:For loops using <code:jsx:for>
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code:for @select>
+						<td
+							<ol
+								<li:design
+								<li:development
+								<li:testing
+								<li:documentation
+						<td
+							<ol
+								<jsx::for(select="data.tasks")
+									<li
+										<jsx::value(select="_.name")
+					<tr
+						<td:
+							<code:for @select> with START/END delimiters.
+							This ensures that the iteration respects the
+							insertion order.
+							
+						<td
+							<ol
+								<li:START
+								<li:design
+								<li:development
+								<li:testing
+								<li:documentation
+								<li:END
+						<td
+							<ol
+								<li:START>
+								<jsx::for(select="data.tasks")
+									<li
+										<jsx::value(select="_.name")
+								<li:END>
+					<tr
+						<td:<code:for @select @as>
+						<td
+							<ol
+								<li:design
+								<li:development
+								<li:testing
+								<li:documentation
+						<td
+							<ol
+								<jsx::for(select="data.tasks",as="task")
+									<li
+										<jsx::value(select="task.name")
+					<tr
+						<td:<code:for @select>/<code:for @select>
+
+						<td
+							<pre:START>
+							<ol
+								<li:design
+							<ol
+								<li:development
+								<li:testing
+							<ol
+								<li:documentation
+							<pre:END>
+						<td
+							<pre:START>
+							<jsx::for(select="data.rtasks")
+								<ol
+									<jsx::for(select="_")
+										<li
+											<jsx::value(select="_.name")
+							<pre:END>
+
+		# ---------------------------------------------------------------------
+		#
+		# @JSX:MAP
+		#
+		# ---------------------------------------------------------------------
+		<section
+			<h3:Map loops using <code:@jsx:map>
+
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code: @jsx:map>
+						<td
+							<ol
+								<li:design
+								<li:development
+								<li:testing
+								<li:documentation
+						<td
+							<ol
+								<li(jsx::map="data.tasks")
+									<jsx::value(select="_.name"):>
+					<tr
+						<td:<code: @jsx:map/@as>
+						<td
+							<ol
+								<li:design
+								<li:development
+								<li:testing
+								<li:documentation
+						# <td
+						# 	<ol
+						# 		<li(jsx::map="data.tasks",jsx::as="task")
+						# 			<jsx::value(select="task.name"):>
+					<tr
+						<td:<code: @jsx:map> / <code: @jsx:map>
+						<td
+							<ol
+								<li:design
+							<ol
+								<li:development
+								<li:testing
+							<ol
+								<li:documentation
+						<td
+							<ol(jsx::map="data.rtasks")
+								<li(jsx::map="_")
+									<jsx::value(select="_.name"):>
+
+		# ---------------------------------------------------------------------
+		#
+		# JSX:IF
+		#
+		# ---------------------------------------------------------------------
+		<h3:1-branch conditionals <code:jsx:if>
+		<table.block-table__horizontal
+			<tbody
+				<tr
+					<td:
+						<code:if @select>
+					<td
+						<b:A
+					<td
+						<jsx::if(select="data.tasks")
+							<b:A
+				<tr
+					<td:<code:if @select @test>
+					<td
+						<b:A
+					<td
+						<jsx::if(select="data.tasks",test="_.length &gt; 0")
+							<b:A>
+				<tr
+					<td:<code:if @select @test>
+					<td
+						<b:A
+					<td
+						<b:A>
+						<jsx::if(select="data.tasks",test="_.length == 0")
+							<b:ERROR>
+				<tr
+					<td:<code:if @select @test @as>
+					<td
+						<b:A
+					<td
+						<jsx::if(select="data.tasks",as="t",test="t.length &gt; 0")
+							<b:A>
+				<tr
+					<td:<code:Nested jsx:if @as>
+					<td
+						<b:A
+					<td
+						<jsx::if(select="data.tasks",as="t",test="t.length &gt; 0")
+							<jsx::if(select="_",as="t",test="true")
+								<b:A>
+
+
+		# ---------------------------------------------------------------------
+		#
+		# JSX:IF + JSX:ELSE
+		#
+		# ---------------------------------------------------------------------
+		<h3:2-branch conditionals <code:jsx:if>‥<code:jsx:else>
+		<table.block-table__horizontal
+			<tbody
+				<tr
+					<td:<code:if @select ‥ elif @test>
+					<td
+						<b:true
+					<td
+						<jsx::if(select="data.tasks",test="_.length==0")
+							<b:false>
+						<jsx::else
+							<b:true>
+				<tr
+					<td:<code:if @select @as ‥ elif @test>
+					<td
+						<b:true
+					<td
+						<jsx::if(select="data.tasks",test="_.length == 0")
+							<b:false>
+						# Here the trick is that we specify a @test and @as, but
+						# they have to be ignored
+						<jsx::else(test="t.length &gt; 0",as="t")
+							<b:true>
+				<tr
+					<td:<code:if if if if else>
+					<td
+						<b:true
+					<td
+						<jsx::if(select="data.tasks",test="_.length != 0")
+							<b:t>
+						<jsx::if(select="data.tasks",test="_.length != 0")
+							<b:r>
+						<jsx::if(select="data.tasks",test="_.length != 0")
+							<b:u>
+						<jsx::if(select="data.tasks",test="_.length != 0")
+							<b:e>
+						<jsx::else
+							<b:false>
+
+
+		# ---------------------------------------------------------------------
+		#
+		# JSX:IF + JSX:ELIF + JSX:ELSE
+		#
+		# ---------------------------------------------------------------------
+		<h3:N-branch  conditionals <code:if @select ‥ elif @test else>
+		<table.block-table__horizontal
+			<tbody
+				<tr
+					<td:<code:if @select ‥ elif @test>
+					<td
+						<b:true
+					<td
+						<jsx::if(select="data.tasks",test="_.length==0")
+							<b:false>
+						<jsx::elif(test="_.length == 0")
+							<b:false>
+						<jsx::else
+							<b:true>
+				<tr
+					<td:<code:if @select @as ‥ elif @test ‥ else>
+					<td
+						<b:true
+					<td
+						<jsx::if(select="data.tasks",test="_.length == 0")
+							<b:false>
+						<jsx::elif(test="t.length == 0",as="t")
+							<b:false>
+						<jsx::else
+							<b:true>
+				<tr
+					<td:<code:if … if … else>
+					<td
+						<b:true
+					<td
+
+						<jsx::if(test="false")
+							<b:false>
+						<jsx::if(test="true")
+							<b:true>
+						<jsx::else
+							<b:false>
+
+		# ---------------------------------------------------------------------
+		#
+		# EDGE CASES
+		#
+		# ---------------------------------------------------------------------
+		<section
+			<h2:Edge case: jsx:if → @jsx:map
+			<p
+				A typical source of issue in JSXML backends is managing
+				an for/map nested within a conditional. The problem is that
+				the conditional nodes are typically unmounted at rendering time,
+				and might be mounted later, which might result in out or 
+				order issues.
+
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code:@jsx:map in jsx:if>
+						<td
+							<b:A>
+							<span
+								<b:and B>
+								<b:and B>
+								<b:and B>
+								<b:and B>
+						<td
+							<jsx::if(select="data.tasks",test="_.length!=0")
+								<b:A>
+								<span(jsx::map=data.tasks)
+									<b: and B >
+							<jsx::else
+								false
+
+		<section
+			<h2:Edge case: jsx:for → jsx:if
+			<p
+				When an <code:jsx:if> node is a direct child of a <code:jsx:for>
+				node, it might not be properly inserted after the the content,
+				resuling in having all the <code:Task #*> nodes in one block
+				and all the <code:is *> nodes inserted later.
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code:@jsx:if in jsx:for>
+						<td
+							<div:Task #<em:0>
+							 is even
+							<code:--END--
+							<div:Task #<em:1>
+							 is odd
+							<code:--END--
+							<div:Task #<em:2>
+							 is even
+							<code:--END--
+							<div:Task #<em:3>
+							 is odd
+							<code:--END--
+						<td
+							# FIXME: Removing the div makes it fail
+							# <div
+							<jsx::for(select="data.tasks",as="task")
+								<div
+									Task
+									<em:
+										<jsx::value(select=task.index):"#" +  _
+								# NOTE: If you wrap this in a div, you
+								# won't have the issue
+								<jsx::if(select="task.index",test="_ % 2 == 0")
+									 is even
+								<jsx::else
+									 is odd
+								<code
+									--END--
+		<section
+			<h2:Edge case: successive jsx:for
+			<p
+				At some point two successive <code:jsx:for> would have
+				interleaved results (ie. <code:ABABAB‥> instead of <code:AAABBB‥>).
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code:jsx:if in jsx:for>
+						<td
+							A 0A 1A 0A 1B 0B 1B 0B 1
+						
+						<td
+							<jsx::for(select="data.tasks",as="task")
+								A
+								<jsx::if(test="index % 2 == 0"):0>
+								<jsx::else:1>
+							<jsx::for(select="data.tasks",as="task")
+								B
+								<jsx::if(test="index % 2 == 0"):0>
+								<jsx::else:1>
+
+		<section
+			<h2:Edge case: nested <code:for/apply/if>
+			<p
+				This edge case was found in the field involving an <code:jsx:if>
+				nested in a <code:jsx:apply> and <code:jsx:for>.
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code:jsx:if in jsx:for>
+						<td
+							<ul
+								<li:A
+								<li:B
+								<li:C
+						<td
+							<jsx::template(name=node)
+								<jsx::if(select=_.children,test="gt(_.length,0)")
+									<li
+										<jsx::value(select=_.label)
+								<jsx::else
+									<li
+										<jsx::value(select=_.label)
+							<ul.tree
+								<jsx::for(select=data.tree,as=node)
+									<jsx::apply(template=node,select=node)
+									# NOTE: The problem does not happend with a
+									# direct if.
+									# <jsx::if(select=_.children,test="gt(_.length,0)")
+									# 	<li
+									# 		<jsx::value(select=_.label)
+									# <jsx::else
+									# 	<li
+									# 		<jsx::value(select=_.label)
+								# NOTE: The problem disappears when we remove
+								# the last element.
+								<li:C
+		#						<button.block-button(on::click=action:rerender)
+		#							Re-render
+		# # NOTE: Disabling inline conditionals as we need to have a selector
+		# # to have delta rendering
+		# # <h3:Using inline Conditionals
+		# # <table.block-table__horizontal
+		# # 	<tr
+		# # 		<td:<code:@jsx:if>
+		# # 		<td
+		# # 			<b:true
+		# # 		<td
+		# # 			<b(jsx::if="_.tasks.length == 0"):false
+		# # 			<b(jsx::if="_.tasks.length"):true
+		# # # # 	<tr
+		# # # # 		<td:<code:@jsx:if @jsx:select>
+		# # # # 		<td
+		# # # # 			<b:true
+		# # # # 		<td
+		# # # # 			<b(jsx::if="_.length == 0",jsx::select="tasks"):false
+		# # # # 			<b(jsx::if="_.length",jsx::select="tasks"):true
+		# # # # 	<tr
+		# # # # 		<td:<code:@jsx:if @jsx:select @jsx:as>
+		# # # # 		<td
+		# # # # 			<b:true
+		# # # # 		<td
+		# # # # 			<b(jsx::if="v.length == 0",jsx::select="tasks",jsx::as="v"):false
+		# # # # 			<b(jsx::if="v.length",jsx::select="tasks",jsx::as="v"):true
+
+## # EOF 

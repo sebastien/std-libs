@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+# TODO: remove @jsx:map support
+<xsl::stylesheet(version="1.0",xmlns::xsl="http://www.w3.org/1999/XSL/Transform",xmlns::jsx="https://github.com/sebastien/jsxml")
+	<xsl::output(method=text,encoding=UTF-8,indent=no)
+
+	# =========================================================================
+	# RENDERING INFORMATION
+	# =========================================================================
+
+	<xsl::template(match=/)
+		<xsl::text:{"strings":[>
+		<xsl::for-each(select=//jsx:T)
+			<xsl::text:&#10;&#9;>
+			<xsl::choose
+				<xsl::when(test="string-length(normalize-space(.))=0")
+					<xsl::text:null>
+				# === HTML TEXT
+				<xsl::when(test="@type and @type!='text'")
+					<xsl::text:{"type":">
+					<xsl::value-of(select="@type")
+					<xsl::text:","value":>
+					<xsl::call-template(name=string-quoted)
+						<xsl::with-param(name=text)
+							<xsl::for-each(select="*|text()")
+								<xsl::call-template(name=string-html)
+					<xsl::text:}>
+				# === PLAIN TEXT
+				<xsl::otherwise
+					<xsl::text:{"type":"text","value":>
+					<xsl::call-template(name=string-quoted)
+						<xsl::with-param(name=text)
+							<xsl::value-of(select=".")
+					<xsl::text:}>
+			<xsl::if(test="position()!=last()")
+				<xsl::text:,>
+		<xsl::text:&#10;]}>
+
+	# =========================================================================
+	# TOOLS
+	# =========================================================================
+
+	<xsl::template(name=string-html)
+		<xsl::choose
+			<xsl::when(test="self::text()")
+				<xsl::value-of(select=".")
+			<xsl::otherwise
+				<xsl::text:&lt;>
+				<xsl::value-of(select="local-name()")
+				<xsl::for-each(select="@*")
+					<xsl::text: >
+					<xsl::value-of(select="local-name()")
+					<xsl::text:=">
+					<xsl::value-of(select=".")
+					<xsl::text:">
+				<xsl::text:&gt;>
+				<xsl::for-each(select="*|text()")
+					<xsl::call-template(name=string-html)
+				<xsl::text:&lt;/>
+				<xsl::value-of(select="local-name()")
+				<xsl::text:&gt;>
+
+	# =========================================================================
+	# TOOLS
+	# =========================================================================
+
+	<xsl::template(name="string-quoted")
+		<xsl::param(name="text")
+		<xsl::variable(name=ntext)
+			<xsl::call-template(name=string-replace)
+				<xsl::with-param(name=replace,select="'&#9;'")
+				<xsl::with-param(name=by,select="' '")
+				<xsl::with-param(name=text)
+					<xsl::call-template(name=string-replace)
+						<xsl::with-param(name=replace,select="'&#10;'")
+						<xsl::with-param(name=by,select="''")
+						<xsl::with-param(name=text)
+							<xsl::call-template(name=string-replace)
+								<xsl::with-param(name=text,select="$text")
+								# 34 is decimal for "
+								<xsl::with-param(name=replace,select="'&#34;'")
+								# 22 is hexadecimal for "
+								# 92 is decimal for \
+								<xsl::with-param(name=by,select="'&#92;u0022'")
+		<xsl::text:">
+		<xsl::value-of(select="normalize-space($ntext)")
+		<xsl::text:">
+
+	<xsl::template(name=string-replace)
+		<xsl::param(name=text)
+		<xsl::param(name=replace)
+		<xsl::param(name=by)
+		<xsl::choose
+			<xsl::when(test="$text='' or $replace='' or not($by)")
+				<xsl::value-of(select="$text")
+			<xsl::when(test="contains($text,$replace)")
+				<xsl::value-of(select="substring-before($text,$replace)")
+				<xsl::value-of(select="$by")
+				<xsl::call-template(name=string-replace)
+					<xsl::with-param(name=text,select="substring-after($text,$replace)")
+					<xsl::with-param(name=replace,select=$replace)
+					<xsl::with-param(name=by,select=$by)
+			<xsl::otherwise
+				<xsl::value-of(select="$text")
+
+
+# EOF

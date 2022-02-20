@@ -1,0 +1,72 @@
+
+COLOR_WAITING = #000000
+COLOR_SUCCESS = #000000
+COLOR_FAILURE = #FF3B2E
+COLOR_BD_LT   = #00000020
+
+.Unit-:
+	.-events-:
+		margin-top:   1.25em
+		margin-bottom: 1.25em
+		width: 100%
+		.-event-:
+			.-status, .-message, .-name, .-index:
+				padding: 10px
+				border-top: 1px solid $COLOR_BD_LT
+			&:last-child
+				.-status, .-message, .-name, .-index:
+					border-bottom: 1px solid $COLOR_BD_LT
+			.-index:
+				padding: 10px
+				padding-left: 0px
+				width: 8em
+				text-align: right
+				&:before
+					content: "#"
+					opacity: 0.45
+			.-name-:
+				font-weight: bold
+				white-space: nowrap
+			.-message-:
+				width: 75%
+				.-description
+					margin-bottom: 0.75em
+				.-result-
+					.-text:
+						margin-right: 0.25em
+						font-size: 90%
+						opacity: 0.5
+					.-value:
+						display: block
+						text-align: right
+						margin-right: 0.25em
+						opacity: 0.5
+			.-status-
+				width: 60px
+				vertical-align: top
+				text-align: right
+				.-label:
+					margin-right: 10px
+					&:after:
+						display: inline-block
+						border-radius: 10px
+						padding-left:  10px
+						padding-right: 10px
+						text-align: center
+						content: "‥"
+						font-weight: bold
+					// TODO: Status should be at the event level
+					&[data-status=waiting]:after:
+						border-color: $COLOR_WAITING
+						color: $COLOR_WAITING
+						content: "Running…"
+					&[data-status=success]:after:
+						border-color: $COLOR_SUCCESS
+						color: $COLOR_SUCCESS
+						content: "✔"
+					&[data-status=failure]:after:
+						border-color: $COLOR_FAILURE
+						color: $COLOR_FAILURE
+						content: "✘"
+
+// EOF

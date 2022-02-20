@@ -1,0 +1,1143 @@
+@module block
+
+// FIXME: This should be cleaned up
+// TODO: CSS VARIABLES, IMPORTS
+COLOR_TEXT     = #202020
+COLOR_TEXT_INV = #FFFFFF
+COLOR_GREY     = #909090
+COLOR_GREY_LTR = #FAFAFA
+COLOR_GREY_LT  = #F0F0F0
+COLOR_GREY_DK  = #303030
+COLOR_BG       = #FFFFFF
+
+COLOR_CODE     = #75838A
+COLOR_GREEN    = #79E631
+COLOR_BLUE     = #0900FF
+COLOR_BLACK    = #000000
+COLOR_RED      = #FF3939
+COLOR_LINK     = #0543FC
+COLOR_LINK_LT  = #D5F5FFA0
+
+COLOR_SUCCESS  = $COLOR_GREEN
+COLOR_WAITING  = $COLOR_GREY
+COLOR_FAILURE  = $COLOR_RED
+COLOR_FOCUS_SHADOW = #0C8AFB20
+COLOR_BOX_SHADOW = #00000010
+COLOR_SELECTED_TXT =$COLOR_GREY_DK
+
+COLOR_TEXT     = #303030
+COLOR_TEXT_INV = #F0F0F0
+
+FONT_BASE = "Work Sans", Helvetica, Arial, sans-serif
+FONT_CODE = Cousine, monospace
+
+@unit pad = 20px
+
+
+@keyframes blockloader
+	from:
+		transform: rotate(0deg)
+	to:
+		transform: rotate(360deg)
+
+// ----------------------------------------------------------------------------
+//
+// BASE STYLES
+//
+// ----------------------------------------------------------------------------
+
+.block-base:
+	font-family: $FONT_BASE
+	font-size: 14px
+	line-height: 1.35
+
+.block-link:
+	&, &:active, &:visited, &:hover:
+		color: $COLOR_TEXT
+		text-decoration: none
+		border-bottom: 3px solid $COLOR_LINK_LT
+		transition-property: border-color
+		transition-duration: 0.15s
+	&:hover:
+		border-bottom: 3px solid $COLOR_LINK
+
+.block-content
+	h1, h2, h3, h4, h5:
+		margin-top:    1em
+		margin-bottom: 1em
+	h1:
+		font-size: 34px
+	h2:
+		font-size: 28px
+	h3:
+		font-size: 22px
+	h4:
+		font-size: 18px
+	h5:
+		font-size: 16px
+	p:
+		max-width: 45em
+		margin-bottom: 1.5em
+		margin-top: 1.5em
+		&:first-child:
+			margin-top: 0em
+	ul, ol:
+		li:
+			margin-left: 1pad
+			padding-left: 1pad
+	ul:
+		li:
+			list-style-type: bullet
+
+	ol li:
+		list-style-type: number
+
+	code:
+		color: $COLOR_CODE
+		font-size: 90%
+
+	a[href]
+		extend(.block-link)
+		
+	table
+		width: 100%
+		margin-top: 1pad
+		margin-bottom: 1pad
+		border-top: 1px solid $COLOR_GREY_LT
+		border-bottom: 1px solid $COLOR_GREY_LT
+		th, td:
+			color: $COLOR_TEXT
+			padding-top:    0.5pad
+			padding-bottom: 0.5pad
+		&.test:
+			td:
+				border-left: 1px solid $COLOR_GREY_LT
+				border-bottom: 1px solid $COLOR_GREY_LT
+				padding-left: 1pad
+				&:first-child:
+					border-left: 0px solid transparent
+					padding-left: 0px
+			td:first-child:
+				width: 50%
+				border-right: 1px solid $COLOR_GREY_LT
+
+.block-stack-
+	display: block
+	.-item
+		margin-top: 1pad
+		margin-bottom: 1pad
+
+.spacer-h
+	width: 20px
+	display: inline-block
+
+// ----------------------------------------------------------------------------
+//
+// LAYOUTS
+//
+// ----------------------------------------------------------------------------
+
+
+.layout-horizontal:
+	display: flex
+	align-items: center
+
+.layout-sidebar-:
+	display: flex
+	align-items: stretch
+	.-bar:
+		width: 250px
+	.-main:
+		flex-grow: 1
+
+.layout-hbar-:
+	display: flex
+	align-items: center
+	.-expand:
+		flex-grow: 1
+
+// A simple dot of 10x10px
+.control-point:
+	position: absolute
+	width: 10px
+	height: 10px
+	border-radius: 20px
+	margin-left: -5px
+	margin-top: -5px
+	background-color: $COLOR_BLACK
+	cursor: grab
+	&:before:
+		content: ""
+		display: block
+		position: absolute
+		left: -5px
+		top: -5px
+		width: 20px
+		height: 20px
+		border-radius: 40px
+		background-color: $COLOR_FOCUS_SHADOW
+		opacity: 0.0
+	&:hover:before:
+		opacity: 1.0
+
+// ----------------------------------------------------------------------------
+//
+// FORMATS
+//
+// ----------------------------------------------------------------------------
+
+
+.json-:
+	.-symbol:
+		font-family: $FONT_BASE
+		font-weight: 600
+	.-number:
+		font-family: $FONT_CODE
+		opacity: 0.75
+	.-string:
+		font-family: $FONT_BASE
+		opacity: 0.75
+		&:before:
+			content: '"'
+		&:after:
+			content: '"'
+	.-array-:
+		.-item:
+			display: inline-block
+			&:after:
+				content: ", "
+			&:last-child:after:
+				content: ""
+		&:before:
+			content: "["
+		&:after:
+			content: "]"
+	.-map-:
+		.-item-:
+			display: inline-block
+			.-key:
+				display: inline-block
+				font-family: $FONT_BASE
+				opacity: 0.45
+				&:after:
+					content: ": "
+			.-value:
+				display: inline-block
+
+			&:after:
+				content: ", "
+			&:last-child:after:
+				content: ""
+		&:before:
+			content: "{"
+		&:after:
+			content: "}"
+
+
+// ----------------------------------------------------------------------------
+//
+// TEXT STYLES
+//
+// ----------------------------------------------------------------------------
+
+.block-panel-:
+	display: flex
+	flex-direction: column
+	.-body:
+		flex-grow: 100
+
+.block-source:
+	background-color: $COLOR_GREY_LTR
+	font-family: $FONT_CODE
+	color: $COLOR_CODE
+	border-radius: 3px
+	padding: 1pad
+	padding-top: 0.5pad
+	padding-bottom: 0.5pad
+	font-size: 13px
+	line-height: 1.5em
+	max-height: 450px
+	overflow-y: auto
+	white-space: pre
+	&:first-child:
+		margin-top: 0em
+	&:last-child:
+		margin-bottom: 0em
+
+.block-output:
+	max-width: 80em
+	overflow: auto
+
+.block-pre:
+	font-family: $FONT_CODE
+
+// ----------------------------------------------------------------------------
+//
+// CONTROLS
+//
+// ----------------------------------------------------------------------------
+
+.block-toolbar:
+	background-color: #F5F5F5
+	display: flex
+	align-items: center
+	padding: 10px
+	border-radius: 4px
+	border-top: 1px solid #00000010
+	border-left: 1px solid #00000010
+	> *[data-grow="true"]:
+		flex-grow: 1
+
+.block-button, .block-button__compact
+	display: inline-block
+	background-color: transparent
+	font-weight: bold
+	font-size: 14px
+	border: 0px solid transparent
+	border-radius: 5px
+	margin-right: 10px
+	outline: none
+	padding: 6px
+	font-family: $FONT_BASE
+	box-sizing: border-box
+	padding-left: 15px
+	padding-right: 15px
+	color: $COLOR_GREY
+	position: relative
+	cursor: pointer
+	&:after, &:before:
+		content: ""
+		display: inline-block
+		position: absolute
+		border-radius: 5px
+		left:  0px
+		right: 0px
+		top:   0px
+		bottom:0px
+	&:before:
+		left:    4px
+		right:  -4px
+		top:     4px
+		bottom: -4px
+		background-color: #00000010
+	&:after:
+		border: 2px solid $COLOR_GREY
+	&:focus:
+		outline: 0px solid #00000010
+		&:before:
+			background-color: $COLOR_FOCUS_SHADOW
+	&:hover:
+		background-color: $COLOR_GREY_LT
+	&:last-child:
+		margin-right: 0em
+	&!disabled
+		opacity: 0.5
+		text-decoration: line-through
+		&:after
+			border-color:  $COLOR_GREY_LT
+		&:before
+			opacity: 0.0
+		&:hover
+			background-color: transparent
+
+.block-button__compact
+	font-size: 11px
+	padding: 3px
+	padding-left: 12px
+	padding-right: 12px
+	text-transform: uppercase
+
+.block-selector-, .block-selector__compact-
+	merge(.block-button)
+	display: inline-flex
+	flex-wrap: row wrap
+	border: 2px solid $COLOR_GREY
+	padding: 0px
+	border-radius: 15px
+	.-option-
+		padding: 5px
+		padding-left: 15px
+		padding-right: 15px
+		border-right: 2px solid $COLOR_GREY
+		position: relative
+		.-label
+			position:relative
+			z-index: 1
+		&:after, &:before:
+			content: ""
+			display: inline-block
+			position: absolute
+			border-radius: 0px
+			left:  0px
+			right: 0px
+			top:   0px
+			bottom:0px
+		&:before:
+			left:    2px
+			right:  -4px
+			top:     2px
+			bottom: -4px
+			background-color: #00000000
+		&:first-child:before
+			border-top-left-radius: 15px
+			border-bottom-left-radius: 15px
+		&:last-child:before
+			border-top-right-radius: 15px
+			border-bottom-right-radius: 15px
+		&:hover:before
+			background-color: #00000010
+		&!selected
+			color: $COLOR_SELECTED_TXT
+			&:before
+				background-color: #00000010
+				box-shadow: -2px -2px 4px #00000015
+		&:last-child:
+			border-right: 0px solid $COLOR_GREY
+
+select.block-selector-
+	padding: 8px
+	padding-top: 4px
+	padding-bottom: 4px
+
+.block-selector__compact-
+	font-size: 11px
+	border-radius: 7px
+	.-option-
+		padding: 2px
+		padding-left: 10px
+		padding-right: 10px
+		&:first-child:before
+			border-top-left-radius:    7px
+			border-bottom-left-radius: 7px
+		&:last-child:before
+			border-top-right-radius:   7px
+			border-bottom-right-radius:7px
+
+.block-buttons-
+	merge(.block-button)
+	display: inline-flex
+	flex-wrap: row wrap
+	border: 2px solid $COLOR_GREY
+	padding: 0px
+	.-button
+		extend(.block-selector-option)
+		&:first-child:before
+			border-top-left-radius: 5px
+			border-bottom-left-radius: 5px
+		&:last-child:before
+			border-top-right-radius: 5px
+			border-bottom-right-radius: 5px
+		&:before:
+			background-color: #00000010
+		&:hover:before:
+			background-color: #00000020
+		&!disabled
+			opacity: 0.5
+			text-decoration: line-through
+			&:before:
+				opacity: 0.0
+			&:hover:
+				background-color: none
+
+.block-pad:
+	width: 1pad
+	height: 1pad
+
+.block-padded:
+	padding: 1pad
+
+.block-number:
+	background-color: $COLOR_GREY
+	font-size: 11px
+	font-weight: 700
+	color: $COLOR_BG
+	padding: 3px
+	border-radius: 5px
+	text-align: center
+	display: inline-block
+	margin-right: 10px
+	&[data-digits="5"]:
+		width: 0.5em * 5
+
+
+
+.block-frame:
+	border: 1px solid $COLOR_GREY_LT
+	padding: 1pad
+	margin-bottom: 1pad
+	margin-top: 1pad
+
+.block-hover:
+	.block-hover-reveal:
+		transition-property: visibility, opacity
+		transition-duration: 0.15s
+		transition-delay: 0.05s
+		visibility: hidden
+		opacity: 0.0
+	&:hover .block-hover-reveal:
+		visibility: visible
+		opacity: 1.0
+
+.block-button__small:
+	extend(.block-button)
+	font-size: 9px
+	font-weight: 700
+	letter-spacing: 0.015em
+	text-transform: uppercase
+
+.block-input:
+	display: inline-block
+	background-color: transparent
+	font-family: $FONT_BASE
+	font-weight: 500
+	font-size: 15px
+	border: 2px solid $COLOR_GREY
+	border-radius: 5px
+	margin-right: 10px
+	outline: none
+	padding: 6px
+	box-sizing: border-box
+	color: $COLOR_GREY
+	position: relative
+	&:focus:
+		box-shadow: 3px 3px $COLOR_FOCUS_SHADOW
+	// NOTE: We need that trick to make sure the inputs
+	// are never flat
+	&[disabled]
+		border: 2px dotted $COLOR_GREY_LT
+	&.as-pre:
+		font-family: $FONT_CODE
+	&:before:
+		content: "​"
+
+
+.block-textarea:
+	merge(.block-input)
+	display: block
+	max-width: 45em
+
+
+.block-list-:
+	.-item-:
+		display: flex
+		align-items: center
+		padding-top:    0.5pad
+		padding-bottom: 0.5pad
+		border-bottom:  2px solid $COLOR_GREY
+		font-size: 15px
+		&!selected:
+			background-color: $COLOR_GREY_LT
+		&:last-child:
+			border-bottom:  2px solid transparent
+		&.valign-middle:
+		.-cell:
+			flex-grow: 0
+		.-cell__fill:
+			flex-grow: 1
+
+.block-label, .block-label__compact:
+	font-weight: 700
+	font-size: 14px
+	line-height: 1.35em
+	margin-bottom: 0.25em
+	margin-top: 0.25em
+	margin-right: 1.25em
+	text-transform: uppercase
+	color: $COLOR_GREY
+
+.block-label__compact
+	font-size: 11px
+
+
+.block-tag:
+	line-height: 1.25
+	border-radius: 1pad
+	font-weight: 300
+	padding: 2px
+	font-size: 14px
+	font-weight: 600
+	padding-left: 10px
+	padding-right: 10px
+	display: inline-block
+	text-transform: uppercase
+	color: $COLOR_GREY_DK
+	background-color: $COLOR_LINK_LT
+
+.block-tags-:
+	display: inline-block
+	.-tag:
+		merge(.block-tag)
+
+.block-table__horizontal-:
+	border-spacing: 0px
+	border-collapse: collapse
+	tr:
+		margin: 0em
+		padding: 0em
+		td, th:
+			border-bottom: 1px solid $COLOR_GREY
+	tbody:
+		tr:first-child:
+			td, th:
+				border-top: 1px solid $COLOR_GREY
+		tr.as-major:
+			td, th:
+				border-top: 1px solid $COLOR_GREY
+	th:
+		text-align: left
+		vertical-align: top
+	th, td:
+		border-collapse: collapse
+		padding-top: 0.75em
+		padding-bottom: 0.75em
+		min-width: 15em
+	.-numeric:
+		text-align: right
+	thead:
+		tr, td, th:
+			border-top: 0px solid transparent
+			border-bottom: 0px solid transparent
+
+
+.block-tag__error:
+	merge(.block-tag)
+	background-color: $COLOR_RED
+	color: $COLOR_TEXT_INV
+
+.block-tabs-:
+	position: relative
+	text-align: left
+	input[type=radio]:
+		visibility: hidden
+		position: absolute
+	input[type=radio] + label:
+		cursor: pointer
+		opacity: 0.5
+	.-label:
+		font-size: 70%
+		letter-spacing: 0.09em
+		text-transform: uppercase
+		color: $COLOR_TEXT
+		font-weight: 700
+		text-decoration: none
+		padding: 10px
+		padding-left: 0px
+		margin-right: 15px
+		display: inline-block
+		&:before:
+			content: "➜"
+			position: relative
+			top: -1px
+			opacity: 0
+			transition-property: opacity
+			transition-duration: 0.15s
+		&:hover:before:
+			opacity: 0.5
+	.-content:
+		border-top: 1px solid $COLOR_GREY_LT
+		clear: left
+		display: none
+		text-align: left
+	input[type=radio]:checked + label:
+		opacity: 1.0
+		&:before:
+			opacity: 1
+	*[id^="tab-0"]:checked ~ [id^="tab-0-content"]:
+		display: block
+	*[id^="tab-1"]:checked ~ [id^="tab-1-content"]:
+		display: block
+	*[id^="tab-2"]:checked ~ [id^="tab-2-content"]:
+		display: block
+	*[id^="tab-3"]:checked ~ [id^="tab-3-content"]:
+		display: block
+
+.block-form-
+	.-field-
+		margin-top: 1pad
+		margin-bottom: 1pad
+		&:first-child:
+			margin-top: 0pad
+		&:last-child:
+			margin-bottom: 0pad
+		.-label
+			font-weight: 600
+			margin-bottom: 0.75em
+		.-value
+		.-meta
+			margin-top: 0.75em
+			opacity: 0.75
+			font-size: 80%
+
+
+.block-separator:
+	margin-top: 1pad
+	border-bottom: 2px solid $COLOR_GREY_LT
+	margin-bottom: 1pad
+
+.block-separator__vertical:
+	margin-left: 1pad
+	border-right: 2px solid $COLOR_GREY_LT
+	margin-right: 1pad
+
+.block-menu-:
+	.-item:
+		&:hover:
+			background-color: $COLOR_GREY_LT
+			cursor: pointer
+
+.block-dropdown-:
+	display: inline-block
+	background-color: transparent
+	padding: 4px
+	padding-left: 15px
+	padding-right: 15px
+	border-radius: 5px
+	border: 2px solid $COLOR_GREY
+	position: relative
+	min-width: 125px
+	.-value:
+		font-size: 14px
+		font-weight: bold
+		color: $COLOR_GREY
+		cursor: pointer
+	.-value:after:
+		content: "⏷"
+		display: inline-block
+		padding-left: 5px
+	.-value:hover:after:
+		color: $COLOR_LINK
+
+	.-menu-:
+		display: none
+		position: absolute
+		padding: 4px
+		left: -2px
+		right: -2px
+		margin-top: 2px
+		border: 2px solid $COLOR_GREY
+		border-top: 1px solid $COLOR_GREY_LT
+		border-top-left-radius: 0px
+		border-top-right-radius: 0px
+		background-color: $COLOR_BG
+		max-height: 200px
+		overflow-x: hidden
+		overflow-y: auto
+		.-item:
+			cursor: pointer
+			&:hover:
+				background-color: $COLOR_GREY_LT
+
+	&:focus:
+		.-menu:
+			display: block
+
+
+.block-scrollable-
+	position: absolute
+	top: 0px
+	left: 0px
+	bottom: 0px
+	right: 0px
+	overflow: hidden
+	.-content:
+		top: 0px
+		left: 0px
+		position: relative
+
+.block-scrollbar-:
+	position: absolute
+	top: 0px
+	bottom: 0px
+	right: 0px
+	width: 10px
+	background-color: $COLOR_GREY_LTR
+	&!hidden:
+		visibility: hidden
+	.-cursor:
+		position: absolute
+		right: 0px
+		top: 0px
+		border-radius: 4px
+		width: 10px
+		background-color: $COLOR_GREY
+		min-height: 10px
+		cursor: grab
+
+.block-scrollbar__horizontal-:
+	position: absolute
+	left: 0px
+	right: 0px
+	bottom: 0px
+	height: 10px
+	background-color: $COLOR_GREY_LTR
+	&!hidden:
+		visibility: hidden
+	.-cursor:
+	// We need to make some room for the scrollbar
+	&[data-axes="2"]:
+		right: 10px
+	.-cursor:
+		position: absolute
+		top: 0px
+		bottom: 0px
+		border-radius: 4px
+		height: 10px
+		background-color: $COLOR_GREY
+		min-height: 10px
+		cursor: grab
+
+.block-actions-:
+	padding: 1pad
+	background-color: $COLOR_GREY_LTR
+	display: flex
+	.-left:
+		text-align: left
+		flex-grow: 1
+	.-right:
+		text-align: right
+		flex-grow: 1
+
+.block-error:
+	border: 1px solid $COLOR_RED
+	color: $COLOR_RED
+	padding: 1pad
+	font-size: 90%
+
+.block-example:
+	position: relative
+	padding: 1pad
+	padding-top: 1pad + 20px
+	border-left: 2px solid $COLOR_GREY_LTR
+	> .description:
+		position: absolute
+		top: 0px
+		left: 0px
+		background-color: $COLOR_GREY_LT
+			padding: 5px
+			padding-left:  10px
+			padding-right: 10px
+			font-size:9px
+			line-height: 15px
+
+.block-checklist:
+	input[type=checkbox]:
+		display: none
+	input[type=checkbox] + .message:before:
+		content: "✔"
+		display: inline-block
+		vertical-align: middle
+		width:       12px
+		height:      12px
+		line-height: 8px
+		border-radius: 10px
+		box-sizing: border-box
+		border: 2px solid $COLOR_GREY
+		margin-right: 10px
+		position: relative
+		top: -1px
+		color: transparent
+	input[type=checkbox]:checked + .message:before:
+		color: $COLOR_GREY_DK
+
+.xml-element-:
+	.-syntax:
+		opacity: 0.5
+	.-name:
+		font-weight: bold
+	.-start, .-end, .-attributes:
+		transition-property: color
+		transition-duration: 0.25s
+		font-family: $FONT_CODE
+	.-end
+		opacity: 0.25
+	.-content
+		display: block
+		padding-left: 10px
+		border-left: 2px solid transparent
+	&[data-name="div"]
+		.-name:
+			font-weight: regular
+	&:hover:
+		> .start, > .end:
+			color: blue
+
+.xml-attribute-:
+	margin-right: 10px
+	.-syntax:
+		opacity: 0.25
+	.-name:
+		font-weight: normal
+		opacity: 0.5
+	.-value:
+		font-style: italic
+	&[data-name="class"]
+		.-value:
+			font-style: normal
+			font-weight: bold
+			color: $COLOR_LINK
+	&[data-name="style"]
+		.-value:
+			font-style: normal
+			&:before:
+				content: '"'
+			&:after:
+				content: '"'
+
+// ----------------------------------------------------------------------------
+//
+// ELEMENTS
+//
+// ----------------------------------------------------------------------------
+
+.Meta-
+	margin-bottom: 4pad
+	margin-top:    0pad
+	.-title, .-subtitle:
+		font-size: 45px
+		line-height: 1.25
+		margin: 0px
+		margin-bottom: 0px
+		font-weight: 800
+	.-subtitle:
+		font-size: 36px
+		font-weight: 600
+	.-tags:
+		margin: 0em
+		padding: 0em
+		.-tag:
+			display: inline-block
+			color: $COLOR_GREY_DK
+			font-weight: bold
+			margin-right:  5px
+			margin-left: 0em
+			opacity: 0.5
+			font-size: 11px
+			line-height: 16px
+			text-transform: uppercase
+			&:before:
+				content: "#"
+				opacity: 0.5
+
+// ----------------------------------------------------------------------------
+//
+// BLOCKS
+//
+// ----------------------------------------------------------------------------
+
+.Blocks-
+	padding: 6pad
+	font-family: $FONT_BASE
+	font-size:   17px
+	line-height: 1.45
+	color: $COLOR_TEXT
+	.-footer:
+		margin-top: 2pad
+		font-size: 80%
+		opacity: 0.5
+
+
+.Block-:
+	margin-bottom: 1pad
+	.-reference:
+		position: absolute
+		opacity: 0.0
+		margin-left: -2pad
+	&:hover .-reference:
+		opacity: 0.5
+	&[data-hidden="true"]:
+		display: none
+	&[data-float="left"]:
+		float: left
+		margin-right: 1pad
+	&[data-expanded="true"]:
+		margin-left: -6pad
+		margin-right: -6pad
+
+
+
+.Paml-
+	.-title:
+		font-weight: bold
+		opacity: 0.5
+		margin-bottom: 0.5pad
+	.-output:
+		border: 1px solid $COLOR_GREY_LT
+		padding: 1pad
+		box-sizing: border-box
+	.-source
+		margin-top: 1pad
+		margin-bottom: 1pad
+	&[data-padded="true"]:
+		.-output
+			padding: 1pad
+	&[data-expand="horizontal"]:
+		.-output:
+			padding: 0px
+			border: 0px solid transparent
+			margin-left: -120px
+			margin-right: -120px
+
+.Texto:
+	h1, h2, h3, h4, h5:
+		margin-top:    2em
+		margin-bottom: 1em
+	a, a:active, a:visited, a:hover:
+		color: $COLOR_TEXT
+		text-decoration: none
+		border-bottom: 3px solid $COLOR_LINK_LT
+		transition-property: border-color
+		transition-duration: 0.15s
+		&:hover:
+			border-bottom: 3px solid $COLOR_LINK
+	p:
+		max-width: 45em
+		margin-bottom: 1em
+	li:
+		max-width: 45em
+	table:
+		border-spacing: 0px
+		border-collapse: collapse
+	td:
+		vertical-align: top
+		padding: 0.75em
+		&:first-child:
+			padding-left: 0px
+		&:last-child:
+			padding-right: 0px
+	th:
+		font-weight: 600
+	ul li, ol li:
+		margin-left: 1pad
+		padding-left: 0.75em
+		margin-bottom: 0.25em
+	ul li:
+		list-style-type: disc
+	ol li:
+		list-style-type: number
+	ul, ol:
+		margin-bottom: 1pad
+
+	// FIXME: That's not right
+	&[data-overview="true"]
+		font-style: italic
+
+.Code-:
+	.-imports:
+		display: none
+	.-script:
+		display: none
+
+// ----------------------------------------------------------------------------
+//
+// TOC
+//
+// ----------------------------------------------------------------------------
+
+#TOC:
+	position: fixed
+	right: 0px
+	padding: 1pad
+	top: 0px
+	.meta:
+		padding-left: 1pad
+		margin-bottom: 1pad
+		.title:
+			font-weight: bold
+		.subtitle:
+			font-weight: bold
+	.section:
+		padding-left: 1pad
+		&.paml, &.code:
+			padding-left: 1.5pad
+			opacity: 0.5
+
+#Loader:
+	position: fixed
+	top:    0px
+	right:  0px
+	width:  40px
+	height: 40px
+	font-size: 20px
+	display: flex
+	align-items: center
+	justify-content: center
+	transition-property: opacity, visibility
+	transition-duration: 0.5
+	visibility: hidden
+	opacity: 0.0
+	&:before:
+		content: "✱"
+		color: $COLOR_LINK
+	&!loading:
+		animation-name: blockloader
+		animation-duration: 1s
+		animation-iteration-count: infinite
+		animation-ease-in-out: linear
+		visibility: visible
+		opacity: 1.0
+
+
+// ----------------------------------------------------------------------------
+//
+// LINTING
+//
+// ----------------------------------------------------------------------------
+
+.Lint-:
+	.-status:
+		float: right
+	.-table-file:
+		white-space: nowrap
+		&:before:
+			content: "✓"
+			color: $COLOR_GREY
+			display: inline-block
+			width: 1.25em
+		&[data-status="ERRORS"]:before:
+			content: "✘"
+			color: $COLOR_RED
+		a:
+			&, &:active, &:visited, &:hover:
+				color: $COLOR_GREY
+				text-decoration: none
+				border-bottom: 3px solid transparent
+			&:active:
+				color: $COLOR_LINK
+			&:hover:
+				border-bottom: 3px solid $COLOR_LINK_LT
+
+	.-file-:
+		display: inline-block
+		padding-bottom: 10px
+		.-anchor:
+			display: inline-block
+			margin-right: 15px
+			font-weight: 600
+			&, &:active, &:visited, &:hover:
+				color: $COLOR_GREY
+			&:active:
+				color: $COLOR_TEXT
+	.-command
+		border-left: 5px solid $COLOR_GREY_LT
+	.-output:
+		border-top: 1px solid $COLOR_GREY_LT
+		border-left: 5px solid transparent
+	&[data-status=ERRORS]:
+		.-file:before:
+			color: $COLOR_RED
+		.-output:
+			border-left: 5px solid $COLOR_RED
+
+// ----------------------------------------------------------------------------
+//
+// TESTING
+//
+// ----------------------------------------------------------------------------
+
+
+&[data-breakpoint="mobile"]:
+	.Blocks:
+		padding: 0px
+		padding-top: 20px
+		padding-bottom: 20px
+// EOF

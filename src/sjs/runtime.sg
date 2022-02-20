@@ -1,0 +1,52 @@
+@module runtime
+
+@shared __BREAK__
+@shared __CONTINUE__
+@shared __RETURN__
+@shared __NOTHING__
+@shared PREFIX
+@shared BASE
+
+@function __isa__
+	pass
+
+@function __instanceof__  
+	pass
+
+@function __specializes__ 
+	pass
+@function __set_name__    
+	pass
+@function __access__      
+	pass
+@function __decompose__   
+	pass
+@function __in__          
+	pass
+@function __slice__       
+	pass
+@function __range__       
+	pass
+@function __apply__       
+	pass
+@function __iterate__     
+	pass
+@function __map__         
+	pass
+@function __filter__      
+	pass
+@function __reduce__      
+	pass
+@function __reduce_right__
+	pass
+@function __bind__        
+	pass
+@function __once__        
+	pass
+@function __send__        
+	pass
+
+@function __unbind__      
+	pass
+
+# EOF

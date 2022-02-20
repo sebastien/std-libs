@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<jsx::import(name=len,from=std.core)
+	<div.Checklist-
+		<jsx::if(test=data.label)
+			<div.-header-
+				<h2.-title
+					<jsx::value(select=data.label)
+		<div.-body-
+			<div.-items-
+				<jsx::for(select=data.items)
+					<jsx::component(type=testing/checkpoint)
+						<jsx::option(name=value,select=_.actual):_
+						<jsx::option(name=expected,select=_.expected)
+						<jsx::option(name=label,select=_.label)
+						<jsx::option(name=test,select=_.test)
+# EOF

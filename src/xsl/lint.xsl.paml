@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?
+
+<xsl::stylesheet(version="1.0",xmlns::xsl="http://www.w3.org/1999/XSL/Transform")
+
+	# This example shows how to deal with multiple namespaces
+	<xsl::output(method=html)
+
+	<xsl::template(match="Log")
+		<html
+			<head
+				<title:
+					<xsl::value-of(select=@project)
+					<xsl::text: >
+					<xsl::value-of(select=@milestone)
+					<xsl::text: ―>
+					Linting log
+				<link(rel=stylesheet,href=lib/pcss/reset.pcss)
+				<link(rel=stylesheet,href=lib/pcss/base.pcss)
+				<link(rel=stylesheet,href=lib/pcss/block.pcss)
+			<body.use-base.use-block
+				<div.Blocks
+					<h1.block-title:Linting Report ―
+						<xsl::value-of(select=@project)
+						<xsl::text: >
+						<span.light
+							<xsl::value-of(select=@milestone)
+					<h2.block-subtitle
+						<span.small:Build 
+							<xsl::value-of(select=@build)
+							<span: @ >
+							<span.light
+								<xsl::value-of(select=@timestamp)
+					<div.Block.Lint__overview-
+						<h2.-title:Overview
+						<table.block-table__horizontal-(cellspacing=0,cellpadding=0)
+							<tbody
+								<xsl::variable(name=ratio)
+									<xsl::value-of(select="1 - (count(//lint[@status='ERRORS']) div count(//lint))")
+								<tr
+									<th:Quality:
+									<td.-numeric
+										<div.block-tag
+											<xsl::choose
+												<xsl::when(test="$ratio = 1.0")
+													Perfect
+												<xsl::when(test="$ratio &gt; 0.95")
+													Very Good
+												<xsl::when(test="$ratio &gt; 0.90")
+													Good
+												<xsl::when(test="$ratio &gt; 0.50")
+													Acceptable
+												<xsl::when(test="$ratio &gt; 0.25")
+													Poor
+												<xsl::otherwise
+													Broken
+								<tr
+									<th:Sucess rate
+									<td.-numeric
+										<xsl::value-of(select="round(100 * $ratio)")
+										%
+								<tr
+									<th:Errors:
+									<td.-numeric
+										<xsl::value-of(select="count(//lint[@status='ERRORS'])")
+								<tr
+									<th:Files:
+									<td
+										<div.columns-3
+											<xsl::for-each(select="//lint")
+												<div.Lint-table-file
+													<xsl::attribute(name=data-status)
+														<xsl::value-of(select=@status)
+													<a
+														<xsl::attribute(name=href)
+															<xsl::text:#>
+															<xsl::value-of(select=@sources)
+														<xsl::value-of(select=@sources)
+						
+					<h2.-title:File details
+					<xsl::for-each(select="lint")
+						<a.-anchor
+							<xsl::attribute(name=name)
+								<xsl::value-of(select=@sources):>
+						<div.Block.Lint-
+							<xsl::attribute(name=data-status)
+								<xsl::value-of(select=@status)
+							<div.-file-
+									<a.-anchor
+										<xsl::attribute(name=href)
+											<xsl::text:#><xsl::value-of(select=@sources):>
+										📃
+								<a.block-link
+									<xsl::attribute(name=href)
+										<xsl::value-of(select=@sources)
+									<xsl::value-of(select=@sources)
+							<div.-command.block-output
+								<div.block-source
+									<label.block-label:Command
+									<code
+										<xsl::value-of(select=command)
+							<div.-output.block-output
+								<div.block-source
+									<label.block-label:Output
+									<pre
+										<xsl::value-of(select=output)
+					<div.block-end
+						␄
+
+# EOF

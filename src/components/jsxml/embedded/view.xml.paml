@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/extra/on",render="delta")
+	<div.block-frame
+		<h4:Embedded component
+		<jsx::if(select=data.text)
+			<p:
+				<jsx::value(select=data.text)
+		<jsx::children
+# EOF
+

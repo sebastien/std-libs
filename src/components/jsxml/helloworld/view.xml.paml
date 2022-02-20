@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",render="delta")
+	<span.text:Hello, world!
+	# 	my type is
+	# 	<b
+	# 		<jsx::value(select="."):component
+	# <jsx::if(select=".",test="!_ || _.length == 0",as="_")
+	# 	<div.error
+	# 		The list is empty.
+	# <jsx::elif(test="_  &amp;&amp; _.length == 1")
+	# 	<div.error
+	# 		The list has one element
+	# <jsx::else
+	# 	<div.info
+	# 		The list is not empty.
+	# 		#There are <jsx::value(select="."):_.length> elements.
+	# 		#There are <jsx::value(select="."):_.length> elements.
+	# <ul.list
+	# 	<li.item(jsx::map=".")
+	# 		<h1:User
+	# 		<div.user
+	# 			Name:
+	# 			<jsx::value(select=firstname):_ || "No name">
+	# 			Last name:
+	# 			<jsx::value(select=lastname):_ || "No last name">
+# EOF

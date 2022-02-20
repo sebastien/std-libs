@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+# -----------------------------------------------------------------------------
+# Project           : JSXML/React Stylesheet
+# -----------------------------------------------------------------------------
+# Author            : Sébastien Pierre
+# License           : BSD License
+# -----------------------------------------------------------------------------
+# Creation date     : 2016-09-06
+# Last modification : 2016-09-28
+# -----------------------------------------------------------------------------
+<xsl::stylesheet(version="1.0",xmlns::xsl="http://www.w3.org/1999/XSL/Transform",xmlns::jsx="https://github.com/sebastien/jsxml")
+
+	# TODO: Prevent rendering of component when not necessary
+	# TODO:
+	#		<span.value(jsx::value="state.overview.freshness")
+	#			<span.error
+	#				<jsx::T:Unknown
+	# The above will generate a list where the elements have no key
+
+	# =========================================================================
+	# RENDERING INFORMATION
+	# =========================================================================
+	<xsl::template(name=react-rendering-information)
+		<xsl::text:react (2017-06-29/15.6.1)>
+
+	# =========================================================================
+	# HELPERS
+	# =========================================================================
+
+	<xsl::template(name=react-helpers)
+		<xsl::call-template(name=default-helpers)
+		<xsl::call-template(name=helper-templates)
+
+	# =========================================================================
+	# IMPORT NAMES
+	# =========================================================================
+	
+	<xsl::template(name=react-import-names)
+		<xsl::text:"react","react-dom"
+		# FIXME: This imports modules twice. It's not ideal.
+		<xsl::for-each(select="//jsx:component")
+			<xsl::text:, ">
+			<xsl::value-of(select="@type")
+			<xsl::text:!component">
+
+	# =========================================================================
+	# IMPORT ARGUMENTS
+	# =========================================================================
+
+	<xsl::template(name=react-import-arguments)
+		<xsl::text:react, reactdom>
+		<xsl::for-each(select="//jsx:component")
+			<xsl::text:,>
+			<xsl::value-of(select="generate-id(.)")
+
+	# =========================================================================
+	# HTML
+	# =========================================================================
+
+	<xsl::template(name=react-jsx-html)
+		# NOTE: It would be much easier to use the spread syntax [...(EXPRESSION)]
+		<xsl::text:{name:"dangerouslySetInnerHTML",add:false,value:{__html:(>
+		<xsl::call-template(name=helper-value-formatter)
+		<xsl::text:)}}>
+
+	# =========================================================================
+	# STYLE
+	# =========================================================================
+
+	<xsl::template(name="react-jsx-style")
+		<xsl::param(name=name)
+		<xsl::text:{name:"style",value:_makeStyleValue(">
+		<xsl::value-of(select="@name")
+		<xsl::text:",>
+		<xsl::call-template(name=helper-value-formatter)
+		<xsl::text:)}>
+
+	# =========================================================================
+	# ELEMENT
+	# =========================================================================
+
+	<xsl::template(name=react-jsx-children)
+		# NOTE: It would be much easier to use the spread syntax [...(EXPRESSION)]
+		<xsl::text:children>
+
+	# =========================================================================
+	# JSX COMPONENT
+	# =========================================================================
+
+	<xsl::template(name=react-jsx-component)
+		<xsl::param(name=module)
+			<xsl::value-of(select="generate-id()")
+		<xsl::param(name=name,select="@jsx:ref")
+		<xsl::variable(name="key")
+			<xsl::text:">
+			<xsl::choose
+				<xsl::when(test="$name")
+					<xsl::value-of(select="$name")
+				<xsl::otherwise
+					<xsl::value-of(select="generate-id()")
+			# NOTE: We need to suffix the context in the case we're in a map
+			<xsl::text:" + (__context__.join("_"))>
+		
+		# MODE 2: This binds the child, but does not get it
+		# FIXME: This function should be put at the top level, it does
+		# not need to be duplicated.
+		<xsl::text:(function(key, childmodule){>
+		# TODO: Support index
+		<xsl::text@raw+escape
+			if (!component.children[key]) {
+				var c = component.createChild(key, childmodule)
+				component.bindChild(key, c);
+				/* TODO: c.bindOptions().. */
+			}
+			var child_class = component.children[key].view.Component;
+		<xsl::text:return >
+		<xsl::call-template(name="create-element")
+			<xsl::with-param(name="isComponent")
+				<xsl::text:true>
+			<xsl::with-param(name="name")
+				<xsl::text:child_class>
+			<xsl::with-param(name="key")
+				<xsl::text:key>
+		<xsl::text:}(>
+		<xsl::value-of(select="$key")
+		<xsl::text:,>
+		<xsl::value-of(select="$module")
+		<xsl::text:))>
+
+		# MODE 3: The full shebang (caching)
+		# <xsl::text:(component.getChild(>
+		# <xsl::value-of(select="$key")
+		# <xsl::text:) ? component.getChild(
+		# <xsl::value-of(select="$key")
+		# <xsl::text:) : component.bindChild(
+		# <xsl::value-of(select="$key")
+		# <xsl::text:,>
+		# <xsl::call-template(name="create-element")
+		# 		<xsl::with-param(name="name",select="$name")
+		# 		<xsl::with-param(name="key",select="$key")
+		# <xsl::text:))>
+
+
+	<xsl::template(name=react-jsx-component-custom)
+		<xsl::call-template(name=react-jsx-component)
+			<xsl::with-param(name=module,select="substring-after(name(),':')")
+
+	# =========================================================================
+	# JSX ON
+	# =========================================================================
+
+	<xsl::template(name=react-jsx-on)
+		<xsl::param(name=name)
+		<xsl::param(name=value)
+		<xsl::variable(name="namen",select="normalize-space($name)")
+		# on: prefixed attributes are capitalized
+		<xsl::text:"on>
+		<xsl::choose
+			# Thank you react for being so anal about event names :/
+			<xsl::when(test="$namen='mouseover'")
+				<xsl::text:MouseOver>
+			<xsl::when(test="$namen='mousein'")
+				<xsl::text:MouseIn>
+			<xsl::when(test="$namen='mouseout'")
+				<xsl::text:MouseOut>
+			<xsl::when(test="$namen='keydown'")
+				<xsl::text:KeyDown>
+			<xsl::when(test="$namen='keyup'")
+				<xsl::text:KeyUp>
+			<xsl::when(test="$namen='keypress'")
+				<xsl::text:KeyPress>
+			<xsl::otherwise
+				<xsl::call-template(name=capitalize)
+					<xsl::with-param(name="text",select="normalize-space($name)")
+		<xsl::text:":>
+		<xsl::choose
+			<xsl::when(test="starts-with(normalize-space($value),'action:')")
+				<xsl::text:component ? component.action(">
+				<xsl::value-of(select="substring-after($value,'action:')")
+				<xsl::text:") : undefined>
+			<xsl::when(test=".=''")
+				<xsl::text:component ? component.action(">
+				<xsl::value-of(select="substring-after(name(),':')")
+				<xsl::text:") : undefined>
+			<xsl::otherwise
+				<xsl::value-of(select="$value")
+
+	# =========================================================================
+	# COMPONENT PREAMBLE
+	# =========================================================================
+
+	<xsl::template(name=react-component-preamble)
+		<xsl::param(name=content)
+		<xsl::call-template(name=indentn)
+		<xsl::text:/* REACT COMPONENT */>
+		<xsl::call-template(name=indentn)
+		<xsl::text:class ReactComponent extends react.Component {render(){>
+		<xsl::call-template(name=indentn-1)
+		<xsl::text:var children=this.props.children; var component=this.props.__component;>
+		<xsl::text:var data=this.props.__data || component.data;>
+		# FIXME: Binding the options for each rendering is not ideal, as it might
+		# trigger a re-rendering of the component. In practice we should
+		# manage componentShouldUpdate
+		<xsl::text:component.bindOptions(this.props);>
+		<xsl::call-template(name=indentn-1)
+		<xsl::text:var state=data;var _=data;var component=this.props.__component;var __context__=[];>
+		<xsl::call-template(name=indentn-1)
+		<xsl::choose
+			<xsl::when(test="count($content)=0")
+				# Element with no content
+			# Element with no content
+				<xsl::text:&#x000A;/* &lt;jsx:component[empty]&gt; */>
+				<xsl::text(console.error("Component has no children"))
+				<xsl::text:/* &lt;/jsx:component&gt; */>
+			<xsl::when(test="count($content)=1")
+				# Element with 1 child
+				<xsl::call-template(name=indentn-1)
+				<xsl::text:/* &lt;jsx:component[single]&gt; */>
+				<xsl::call-template(name=indentn-1)
+				<xsl::text:return (>
+				<xsl::apply-templates(select=$content): >
+				<xsl::call-template(name=indentn-1)
+				<xsl::text:);>
+			<xsl::otherwise
+				# Element with many children
+				<xsl::text:&#x000A;/* &lt;jsx:component[multiple]&gt; */>
+				<xsl::text:return react.createElement("div",{"className":"component"},>
+				<xsl::for-each(select="$content")
+					<xsl::apply-templates(select=".")
+					<xsl::if(test="position()!=last()")
+						<xsl::text:,>
+				<xsl::call-template(name=indentn-1)
+				<xsl::text:);>
+				<xsl::text:/* &lt;/jsx:component&gt; */>
+
+		<xsl::call-template(name=indentn-1)
+		<xsl::text:}};>
+		<xsl::call-template(name=indentn-1)
+		<xsl::text:exports.ReactComponent = ReactComponent;>
+			
+
+	# =========================================================================
+	# COMPONENT
+	# =========================================================================
+
+	<xsl::template(name=react-component)
+		<xsl::param(name=prefix)
+		<xsl::param(name=content)
+		<xsl::call-template(name=indentn)
+		<xsl::text:/* VIEW FUNCTION */>
+		<xsl::call-template(name=indentn)
+		<xsl::call-template(name=default-component-preamble)
+			<xsl::with-param(name=prefix,select=$prefix)
+		<xsl::text@raw+escape
+			function(component){
+				var view = function(data,node){
+					return reactdom.render(react.createElement(ReactComponent, {__data:data,__component:component,node:node}), node);
+				}
+				view.Component = ReactComponent;
+				return view;
+			};
+			return exports;
+
+
+	# ==========================================================================
+	# ELEMENT PREFIX
+	# ==========================================================================
+
+	<xsl::template(match="*",name="react-element-prefix")
+		<xsl::param(name="constructor")
+		<xsl::choose
+			<xsl::when(test="$constructor")
+				<xsl::value-of(select="$constructor")
+			<xsl::otherwise
+				<xsl::text:react.createElement>
+		<xsl::choose
+			<xsl::when(test="jsx:if|jsx:else|jsx:elif")
+				<xsl::text:.apply(react, __flatten([>
+			<xsl::otherwise
+				<xsl::text:(>
+
+	# ==========================================================================
+	# ELEMENT NAME
+	# ==========================================================================
+
+	<xsl::template(match="*",name="react-element-name")
+		<xsl::param(name="name")
+		<xsl::value-of(select="$name")
+		<xsl::text:,>
+
+	# ==========================================================================
+	# CLASS ATTRIBUTE NAME
+	# ==========================================================================
+
+	<xsl::template(match="*",name="react-attribute-name-class")
+		<xsl::text:className>
+
+	# ==========================================================================
+	# ELEMENT ATTRIBUTES
+	# ==========================================================================
+
+	<xsl::template(name="react-element-attributes")
+		<xsl::param(name="attributes")
+		<xsl::param(name="key")
+		<xsl::param(name="isComponent")
+		<xsl::choose
+			<xsl::when(test='self::jsx:component or $isComponent="true"')
+				<xsl::text:{>
+				<xsl::if(test='$isComponent="true"')
+					<xsl::for-each(select="@*[substring-before(name(),':')!='jsx']")
+						<xsl::value-of(select="name()")
+						<xsl::text::>
+						<xsl::call-template(name=string-template-quoted)
+							<xsl::with-param(name=text,select=".")
+						<xsl::text:,>
+				<xsl::for-each(select="./jsx:option")
+					<xsl::value-of(select=@name)
+					<xsl::text::>
+					<xsl::call-template(name=helper-value-formatter)
+						<xsl::with-param(name=value,select=".")
+						<xsl::with-param(name=selector,select="@select")
+						<xsl::with-param(name=alias,select="@as")
+					<xsl::text:,>
+				<xsl::text:__component:component.children[key]}>
+			<xsl::otherwise
+				<xsl::call-template(name=helper-element-attributes)
+					<xsl::with-param(name=attributes,select="$attributes")
+					<xsl::with-param(name=key,select="$key")
+			# 	<xsl::choose
+			# 		<xsl::when(test="ancestor-or-self::*[@jsx:type]")
+			# 			<xsl::value-of(select="generate-id()")
+			# 	<xsl::if(test="ancestor-or-self::div")
+			# 		<xsl::text:">
+			# 		<xsl::value-of(select="generate-id()")
+			# 		<xsl::text:">
+
+	# ==========================================================================
+	# CREATE ELEMENT CHILDREN
+	# ==========================================================================
+
+	<xsl::template(name="react-element-content")
+		<xsl::param(name="children")
+		<xsl::param(name="content")
+		<xsl::choose
+			<xsl::when(test="$content")
+				<xsl::text:,>
+				<xsl::value-of(select="$content")
+			<xsl::when(test="$children")
+				<xsl::text:,>
+				<xsl::call-template(name="helper-element-children-list")
+					<xsl::with-param(name=children,select="$children")
+
+	# ==========================================================================
+	# ELEMENT SUFFIX
+	# ==========================================================================
+
+	<xsl::template(match="*",name="react-element-suffix")
+		<xsl::choose
+			<xsl::when(test="jsx:if|jsx:else|jsx:elif")
+				<xsl::text:],/*skip=*/2))>
+			<xsl::otherwise
+				<xsl::text:)>
+
+# EOF - vim: ts=4 sw=4

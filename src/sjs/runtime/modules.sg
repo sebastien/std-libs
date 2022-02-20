@@ -1,0 +1,53 @@
+@module runtime.modules
+
+@shared options
+@shared defaults
+@shared loading
+@shared preloaded
+@shared loaded 
+@shared imports
+@shared resolver
+@shared loader
+@shared parser
+@shared path
+@shared fixes
+@shared paths
+@shared isLoading
+
+@function configure
+	pass
+
+@function expects
+	pass
+
+@function parse
+	pass
+
+@function resolve
+	pass
+
+@function load
+	pass
+
+@function exists
+	pass
+
+@function resolve
+	pass
+
+@function ready
+	pass
+
+@function importer
+	pass
+
+@function join
+	pass
+
+@function define
+	pass
+
+@function require
+	pass
+
+# EOF 

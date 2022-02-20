@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",render="delta")
+	<jsx::import(name=EventType,from=std.util.testing)
+	<jsx::import(name=Value,from=std.util.testing)
+	<jsx::import(name=prim,from=std.core)
+	<jsx::import(name=json,from=std.core)
+	<div.Unit-
+		<jsx::if(select=data.value)
+			<div.-summary-
+				<h3.-title-
+					<span.-label
+						<jsx::T:Unit test: >
+					<span.-value(jsx::value=data.value.name)
+						unnamed
+				<jsx::if(select=data.value.description)
+					<div.-description(jsx::value=data.value.description)
+						No description
+			<table.-events-(cellpadding=0,cellspacing=0)
+				<tbody
+					<jsx::for(select=data.value.events,jsx::as=event)
+						<tr.-event-
+							<td.-status-
+								<span.-label
+									<jsx::attribute(name=data-status,select=event.status.__name__):"" + _.toLowerCase()>
+							<td.-index-
+								<span.-label
+									<jsx::value:"" + (index + 1)
+							<td.-name-
+								<span.-label
+									<jsx::value(select=_.name+_.id):""+(_[0]||_[1]||" ")
+							<td.-message-
+								<jsx::if(select=_.description)
+									<div.-description-
+										<jsx::value(select=_.description)
+								<div.-result-
+									<jsx::for(select=_.message)
+										<jsx::if(test="_ instanceof window.String")
+											<code.-text
+												String(<jsx::value:json(_)>)
+										<jsx::elif(test="typeof(_) == 'string'")
+											<span.-text
+												<jsx::value:_
+										<jsx::elif(test="_ instanceof Value")
+											<code.-value
+												<jsx::value:json(prim(_.value))
+										<jsx::elif(test="typeof _  == typeof undefined")
+											<code.-value:undefined
+										<jsx::elif(test=" _  === 'null'")
+											<code.-value:null
+										<jsx::else
+											<code.-value
+												<jsx::value:json(prim(_))
+		<jsx::else
+			<div.block-error
+				<jsx::T:Could not find test
+				<em
+					<jsx::value(select=data.test)
+	# EOF

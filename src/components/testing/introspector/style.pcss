@@ -1,0 +1,56 @@
+.Introspector-:
+	font-size: 13px
+	line-height: 14px
+	font-family: mono
+	color: #202020
+	.-name
+		vertical-align: top
+		&:after
+			content: " = "
+	.-function__abstract, .-array__abstract, .-object__abstract:
+		opacity: 0.5
+		&:after:
+			content: "…"
+	.-object-, .-array-:
+		display: inline-block
+		cursor: pointer
+		&:before:
+			content: "►"
+			margin-right: 5px
+		.-arity:
+			opacity: 0.5
+			&:before:
+				content: "("
+			&:after:
+				content: ")"
+		.-items:
+			display: inline-block
+			&:before:
+				content: "{"
+			&:after:
+				content: "}"
+		.-item-:
+			display: inline-block
+			margin-left: 5px
+			&:after:
+				content: ","
+			&:last-child:after:
+				content: ""
+			.-key:
+				color: #0048E4
+				&:after:
+					content: ":"
+			.-value:
+				margin-left: 5px
+					color: #00D0E4
+		&!expanded:
+			&:before:
+				transform: rotate(90deg)
+			.-items:
+				display: block
+			.-item:
+				display: block
+				margin-left: 15px
+
+
+

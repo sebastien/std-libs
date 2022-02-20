@@ -1,0 +1,235 @@
+// ----------------------------------------------------------------------------
+// module            : BASE
+// ----------------------------------------------------------------------------
+// Author            : Sébastien Pierre
+// License           : BSD License
+// ----------------------------------------------------------------------------
+// Creation date     : 2017-03-17
+// Last modification : 2019-02-20
+// ----------------------------------------------------------------------------
+// This module contains a bunch of generic reusable css rules that can
+// be used to quickly style a page without too much thought/typing.
+
+Z_DRAGGING = 250
+@macro bg-contain url, width, height
+	width: $width
+	height: $height
+	background-image: `url(` $url `)`
+	background-position: center center
+	background-repeat: no-repeat
+	background-size: contain
+
+@macro circle size
+	display: block
+	width:   $size
+	height:  $size
+	border-radius: $size
+	position: relative
+	top:  0 - ($size - 1) / 2
+	left: 0 - ($size - 1) / 2
+
+@macro triangle-up width, height, color
+	display: block
+	border-color: transparent
+	border-style: solid
+	border-bottom-color: $color
+	border-left-width: $width/2
+	border-right-width:      $width/2
+	border-bottom-width:      $height
+
+.action
+	user-select: none
+	cursor: pointer
+
+.editable
+	// We force breaking up words
+	word-wrap: break-word
+	cursor: text
+	// NOTE: This is required for Safari compatilibity, as otherwise
+	// we need to use whitespace. SEE:SAFARI_NBSP
+	white-space: pre-wrap
+	// NOTE: Some browsers will inject <br> tags, we don't want them.
+	br
+		display: none
+	&!empty:after:
+		display: inline-block
+		content: attr(data-placeholder)
+		opacity: 0.85
+		pointer-events: none
+	&!empty:before:
+		display: inline-block
+		content: "​"
+	&[data-editable="false"]!empty:after
+		display: none
+
+.cleared
+	&:after:
+		content: ""
+		display:block
+		height:0
+		clear:both
+.hidden :
+	display: none !important
+
+.invisible:
+	visibility: hidden
+
+.visible:
+	visibility: visible
+
+.transparent:
+	opacity: 0.0
+	transition-property: opacity
+	transition-duration: 1.0
+
+.to-n:
+	position: absolute
+	top:      0px
+
+.to-ne:
+	position: absolute
+	top:      0px
+	right:    0px
+
+.to-nw:
+	position: absolute
+	top:      0px
+	left:     0px
+
+.to-s:
+	position: absolute
+	bottom:   0px
+
+.to-se:
+	position: absolute
+	bottom:   0px
+	right:    0px
+
+.to-sw:
+	position: absolute
+	bottom:   0px
+	left:     0px
+
+.to-w:
+	position: absolute
+	left:     0px
+
+.to-e:
+	position: absolute
+	right:    0px
+
+.to-m:
+	position: absolute
+	left:     0px
+	right:    0px
+	margin:   auto
+
+.bg-contain:
+	background-position: center center
+	background-repeat: no-repeat
+	background-size: contain
+
+.bg-cover:
+	background-position: center center
+	background-repeat: no-repeat
+	background-size: cover
+
+.expand:
+	position: absolute
+	top:      0px
+	bottom:   0px
+	left:     0px
+	right:    0px
+
+
+.expand-overlay:
+	merge(.expand)
+	position: fixed
+
+.expand-w:
+	position: absolute
+	left:     0px
+	right:    0px
+
+.expand-h:
+	position: absolute
+	top:      0px
+	bottom:   0px
+
+.fit-w:
+	box-sizing: border-box
+	width: 100%
+
+.square:
+	position: relative
+	&:before:
+		content: ""
+		display: block
+		padding-top: 100%
+
+.layout-centered:
+	display: flex
+	align-items: center
+	justify-content: center
+
+.overlay-
+	merge(.expand-overlay)
+	background-color: #00000000
+
+.cursor-
+	.-move
+		cursor: move
+	.-pointer
+		cursor: pointer
+	.-grab, .-drag
+		// SEE: https://stackoverflow.com/questions/5697067/css-for-grabbing-cursors-drag-drop#18294634
+		cursor: move
+		cursor: grab
+		cursor: -moz-grab
+		cursor: -webkit-grab
+	.-dragging, .-grabbing
+		cursor: grab
+		cursor: -moz-grab
+		cursor: -webkit-grab
+		cursor: grabbing
+		cursor: -moz-grabbing
+		cursor: -webkit-grabbing
+		transition-property: "none" !important
+		transition-duration: "0.0s" !important
+
+.dragging-overlay
+	content: ""
+	display: block
+	position: fixed
+	top: 0px
+	bottom: 0px
+	left: 0px
+	right: 0px
+	background-color:#00000000
+	// DEBUG
+	// background-color:#FF000040
+	user-select: none
+	z-index: $Z_DRAGGING
+
+.dragging:
+	// NOTE: This will ensure that everything is covered
+	&:before
+		merge(.dragging-overlay)
+	&, *:
+		cursor: move !important
+		user-select: none !important
+
+.no-
+	.-wrap:
+		white-space: nowrap
+	.-select:
+		user-select: none
+	.-animation:
+		transition-property: none !important
+		transition-duration: 0.0s !important
+	.-events:
+		pointer-events: none
+	.-cursor:
+		cursor: none
+
+// EOF

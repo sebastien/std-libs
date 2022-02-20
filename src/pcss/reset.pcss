@@ -1,0 +1,59 @@
+// ----------------------------------------------------------------------------
+// module            : RESET
+// ----------------------------------------------------------------------------
+// Author            : Sébastien Pierre
+// License           : BSD License
+// ----------------------------------------------------------------------------
+// Creation date     : 2017-03-17
+// Last modification : 2018-06-19
+// ----------------------------------------------------------------------------
+// Resets all elements to a blank default
+
+.reset:
+	box-sizing: border-box
+	margin:0
+	padding:0
+	border:0
+	vertical-align:baseline
+	list-style-type: none
+	-webkit-margin-before: 0
+	-webkit-margin-after: 0
+	text-rendering:optimizeLegibility
+
+.reset-control-
+	merge(.reset)
+	outline: 0px solid transparent
+	background-color: transparent
+	border: 0px solid transparent
+	&::-moz-focus-inner
+		border: 0
+	&:focus, &:active
+		outline: 0px solid transparent
+
+.reset-list-
+	&, .-item
+		list-style-type: none
+		margin: 0px
+		padding: 0px
+
+
+&, .reset-all
+	html,body,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,abbr,address,cite,code,del,dfn,em,img,ins,kbd,q,samp,small,strong,sub,sup,var,b,i,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,figcaption,figure,footer,header,hgroup,menu,nav,section,summary,time,mark,audio,video:
+		merge(.reset)
+
+	*[contenteditable]:
+		outline: 0px solid transparent
+
+	button
+		&, &:active, &:focus:
+			outline: 0px solid transparent
+		&::-moz-focus-inner:
+			background: red
+
+	input, select, button, textarea, label
+		merge(.reset)
+		outline: 0px solid transparent
+		&:focus, &:active:
+			outline: 0px solid transparent
+
+// EOF

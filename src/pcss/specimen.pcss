@@ -1,0 +1,97 @@
+@unit vsep = 0.75em
+
+@macro t-label
+	font-size: 90%
+	line-height: 1.25em
+	opacity: 0.5
+
+.variables
+	--specimen-value-bg: transparent
+	--specimen-value-txt: unset
+	--specimen-value-pad: 0px
+
+.padded
+	padding: 10px
+
+.sampler-
+	.-sample-
+		display: block
+		margin-top: 1vsep
+		margin-bottom: 1vsep
+		.-icon
+			display: inline-block
+			width:   1.5em
+			text-align: center
+		.-label-
+			t-label()
+			display: inline-block
+		.-value
+			margin-bottom: 1vsep
+			background-color: var(--specimen-value-bg)
+			color: var(--specimen-value-txt)
+			padding: var(--specimen-value-pad)
+		&:first-child
+			.-value
+				margin-bottom: 0vsep
+
+.sampler__separated-:
+	extend(.sampler)
+	.-sample-
+		border-bottom: 1px solid #00000010
+		padding-bottom: 0.5vsep
+		padding-top: 0.5vsep
+		&:last-child:
+			border-bottom: 0px solid #00000010
+
+.sampler__boxes-:
+	extend(.sampler)
+	.-sample-
+		border: 1px solid #00000010
+		padding: 1vsep
+		position: relative
+		&[title]
+			margin-top: 50px
+			&:before:
+				content: attr(title)
+				display: block
+				position: absolute
+				top: -1.75em
+				left: 0px
+				font-weight: bold
+
+.colorpalette-
+	.-color-:
+		display: flex
+		color: #909090
+		font-size: 90%
+		position: relative
+		align-items: center
+		.-sample:
+			display: block
+			width:   1.5em
+			height:  1.5em
+			margin-top: 1vsep
+			margin-bottom: 1vsep
+			box-sizing: border-box
+			box-shadow: 2px 2px 2px #00000020
+			border-radius: 1.25em
+			border: 3px solid #00000020
+			text-indent: 1.25em + 1.5em
+			background-color: red
+			vertical-align: bottom
+			margin-right: 20px
+			white-space: nowrap
+			&.as-square
+				border-radius: 0px
+		.-border:
+			position: absolute
+			top: 50%
+			left:   6px
+			right:  6px
+			top:    6px
+			bottom: 6px
+			border: 1px solid transparent
+		.-label:
+			t-label()
+
+// EOF

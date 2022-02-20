@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+# @import blocks!pcss
+# @import std.util.reloading!sjs
+<xsl::stylesheet(version="1.0",xmlns::xsl="http://www.w3.org/1999/XSL/Transform")
+
+	# This example shows how to deal with multiple namespaces
+	<xsl::output(method=html)
+
+	<xsl::template(match="Block")
+		# We need a doctype, see http://www.microhowto.info/howto/generate_an_html5_doctype_using_xslt.html
+		# xsl::text(disable-output-escaping='yes')&lt;!DOCTYPE html&gt;&#x000A;>
+		<html
+			<head
+				<meta(charset=UTF-8)
+				<meta(name="viewport",content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no")
+				<title
+					<xsl::value-of(select=//Meta/title)
+					<xsl::if(test=//Meta/subtitle)
+						―
+						<xsl::value-of(select=//Meta/subtitle)
+				<link(rel=stylesheet,href="https://fonts.googleapis.com/css?family=Cousine|Work+Sans:300,400,700,800")
+				<link(rel=stylesheet,href=lib/css/fonts.css)
+				# NOTE: This is not really working
+				# <script(src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js")
+				# <script@raw
+				# 	WebFontConfig = {
+				# 	google:{
+				# 	families : ["Cousine", "Work+Sans:300,400,700,800"]
+				# 	},
+				# 	custom: {
+				# 	families: ['My Font', 'My Other Font:n4,i4,n7'],
+				# 	urls: ['lib/css/fonts.css']
+				# 	}};
+				<link(rel=stylesheet,href=lib/pcss/reset.pcss)
+				<link(rel=stylesheet,href=lib/pcss/block.pcss)
+				<xsl::for-each(select="//Meta/import/module")
+					<xsl::variable(name=url)
+						<xsl::choose
+							<xsl::when(test="contains(.,'://')")
+								<xsl::value-of(select=".")
+							<xsl::when(test="@type")
+								<xsl::text:lib/>
+								<xsl::value-of(select="@type")
+								<xsl::text:/>
+								<xsl::value-of(select=".")
+							<xsl::otherwise
+								<xsl::value-of(select=".")
+					<xsl::choose
+						<xsl::when(test="@type='pcss'")
+							<link(rel=stylesheet,type=text/css,href="{$url}")
+						<xsl::when(test="@type='css'")
+							<link(rel=stylesheet,type=text/css,href="{$url}")
+						<xsl::when(test="@type='js'")
+							<script(src="{$url}")
+						<xsl::when(test="@type='sjs'")
+							<script(src="{$url}")
+				<xsl::for-each(select="//PCSS/script")
+					<style(type=text/css)
+						<xsl::value-of(select=.)
+				# TODO: The [@binding-output] is a bit broad, could be
+				# restricted to the corresponding subset.
+				<script:window.__block__ = {};
+				<xsl::if(test="//Code[@language='sugar2']|//JSXML|//Component|//*[@binding-direction]")
+					<script
+						var onRuntimeCallbacks = [];
+						function onRuntimeReady(callback){
+							onRuntimeCallbacks.push(callback);
+						}
+						function onRuntimeLoaded(runtime) {
+							runtime.modules.load("std.util.reloading",function(m){m.watch();});
+							onRuntimeCallbacks.forEach(function(_){_(runtime);});
+						# If there is a node with binding attribute, we load and 
+						# create a cell network.
+						<xsl::if(test="//*[@binding-direction]")
+							runtime.modules.load("std.state.cells",function(m){window.__block__.network = new m.Network();});
+						}
+					<script#std-runtime-load.oop.modules.conf(src=lib/js/runtime/load.js,data-onload="onRuntimeLoaded(runtime)",data-runtime-bind=runtime)
+				# NOTE: We only do this for vanilla
+				# NOTE: This is a trick to not import modules twice
+				# <xsl::for-each(select="//Code/imports/module")
+				# 	<xsl::variable(name="module")
+				# 		<xsl::value-of(select="@path")
+				# 	<xsl::if(test="generate-id(//Code/imports/module[@path=$module][1]) = generate-id(.)")
+				# 		<script(src="{$module}")
+
+			<body
+				<xsl::attribute(name=class)
+					<xsl::text:use-block variables>
+					<xsl::for-each(select="//Meta/import/module")
+						<xsl::choose
+							<xsl::when(test="@type='pcss' or @type='css'")
+								<xsl::text: use->
+								<xsl::value-of(select="@name")
+				<div.Blocks-
+					<div.-content
+						<xsl::apply-templates
+					<xsl::if(test="//Component")
+						<script
+							onRuntimeReady(function(r){
+								r.modules.load("std.ui.components", function(){std.ui.components.bind()});
+							});
+				<xsl::if(test="//Code[@language='sugar2']|//JSXML|//Component")
+					<script
+						onRuntimeReady(function(r){
+							var loader = document.createElement("div");
+							document.body.appendChild(loader);
+							loader.setAttribute("id", "Loader");
+							var update=function(){
+								if (r.modules.isLoading == 0) {
+									loader.setAttribute("data-state", "")
+								} else {
+									loader.setAttribute("data-state", "loading")
+								}
+							}
+							r.__bind__(r.modules, "loaded",  update);
+							r.__bind__(r.modules, "loading", update);
+							update();
+						});
+				<script
+					(function(){
+						var relayout = function(){
+							var dpi = 10;
+							while((window.matchMedia("(min-resolution:"+dpi+"dpi)").matches)){dpi+=10;}
+							var wpx = window.innerWidth;
+							var w   = wpx/Math.max(1,dpi/100);
+							if   (w &lt; 520) { document.body.setAttribute("data-breakpoint", "mobile");}
+							else              { document.body.setAttribute("data-breakpoint", "desktop");}
+						}
+						window.addEventListener("resize",relayout);
+						relayout();
+					})();
+
+
+	# -------------------------------------------------------------------------
+	#
+	# META
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(match="//Meta")
+		<div.Meta-
+			<xsl::if(test="title")
+				<h1.-title
+					<xsl::value-of(select=title)
+			<xsl::if(test="subtitle")
+				<h1.-subtitle
+					<xsl::value-of(select=subtitle)
+			<xsl::if(test="tags")
+				<ul.-tags
+					<xsl::for-each(select=tags/tag)
+						<li.-tag
+							<xsl::value-of(select=.)
+
+	# -------------------------------------------------------------------------
+	#
+	# HEADING
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(match="//Heading")
+		<div.Block-
+			<div.-reference:#
+			<div.block-content
+				<xsl::element(name="h{@depth}")
+					<xsl::value-of(select=.)
+
+	# -------------------------------------------------------------------------
+	#
+	# CODE
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(match="//Code")
+		<div.Block.Code
+			<xsl::call-template(name=block-attributes)
+			<xsl::if(test="@collapsed='true'")
+				<xsl::attribute(name=data-collapsed):true
+			<div.block-tabs-
+				<input.-input(checked=true,type=radio,name="{generate-id(.)}",id="tab-0-{generate-id(.)}")
+				<label.-label(for="tab-0-{generate-id(.)}",role=tab,aria-selected=true,tabindex=0):Source
+
+				<input.-input(type=radio,name="{generate-id(.)}",id="tab-1-{generate-id(.)}")
+				<label.-label(for="tab-1-{generate-id(.)}",role=tab,aria-selected=true,tabindex=0):Compiled
+				<div.-content(id="tab-0-content-{generate-id(.)}-source")
+					<pre.block-source
+						<xsl::value-of(select=source)
+							<h1:Imports
+							<h1:Block
+				<div.-content(id="tab-1-content-{generate-id(.)}-transpiled")
+					<pre.block-source
+						<xsl::value-of(select=script)
+		<div.-script
+			<script
+				# FIXME: This should be differetn for JavaScript code
+				onRuntimeReady(function(runtime){
+				var state = __block__.state;
+				var define  = function(deps,factory){return runtime.modules.define("TODO", deps, factory)};
+				define.amd  = true;
+				return (
+				<xsl::value-of(select=script)
+				);
+				});
+
+	# -------------------------------------------------------------------------
+	#
+	# SHADER
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(match="//Shader")
+		<div.Block.Code.Shader
+			<a
+				<xsl::attribute(name=name)
+					<xsl::value-of(select="generate-id(.)")
+				<div.-title:
+					<span.block-tag
+						Shader
+					<span.sep-h
+					<code
+						<xsl::value-of(select="@name")
+			<pre.block-source
+				<xsl::value-of(select=source)
+			<div.-script
+				<script(type="text/glsl")
+					<xsl::attribute(name=id)
+						<xsl::value-of(select=@name)
+					<xsl::value-of(select=source)
+				# Shaders also register in a global `shaders` variable.
+				<script(type="text/javascript")
+					<xsl::text:typeof(onRuntimeReady)!=="undefined" &amp;&amp; onRuntimeReady(function(){var state = __block__.state;window.shaders = window.shaders||{};window.shaders[">
+					<xsl::value-of(select=@name)
+					<xsl::text:"]=document.getElementById(">
+					<xsl::value-of(select=@name)
+					<xsl::text:").textContent.trim();});>
+
+	# -------------------------------------------------------------------------
+	#
+	# PAML STYLING
+	#
+	# -------------------------------------------------------------------------
+
+	# TODO: Support cell binding reference
+	<xsl::template(match="//Paml")
+		<div.Block.Paml-
+			<xsl::call-template(name=block-attributes)
+			<a
+				<xsl::attribute(name=name)
+					<xsl::value-of(select="generate-id(.)")
+			<xsl::if(test=@title)
+				<div.-title:
+					<xsl::value-of(select="@title")
+			<xsl::choose
+				<xsl::when(test="@code='true'")
+					<div.block-tabs-
+						<li.-tab-
+							<input.-input(checked=true,type=radio,name="{generate-id(.)}",id="tab-{generate-id(.)}-source")
+							<label.-label(for="tab-{generate-id(.)}-source",role=tab,aria-selected=true,tabindex=0):Result
+							<div.-content(id="tab-content-{generate-id(.)}-source")
+								<div.block-output
+									<xsl::apply-templates(select=fragment)
+						<li.-tab-
+							<input.-input(type=radio,name="{generate-id(.)}",id="tab-{generate-id(.)}-html")
+							<label.-label(for="tab-{generate-id(.)}-html",role=tab,aria-selected=true,tabindex=0):HTML
+							<div.-content(id="tab-content-{generate-id(.)}-html")
+								<div.block-output
+									<xsl::for-each(select="fragment/*")
+										<xsl::apply-templates(mode=display)
+						<li.-tab-
+							<input.-input(type=radio,name="{generate-id(.)}",id="tab-{generate-id(.)}-paml")
+							<label.-label(for="tab-{generate-id(.)}-paml",role=tab,aria-selected=true,tabindex=0):Paml
+							<div.-sep
+							<div.-content(id="tab-content-{generate-id(.)}-paml")
+								<pre.block-source
+									<xsl::value-of(select=source)
+				<xsl::otherwise
+					<div.-output
+						<xsl::apply-templates(select=fragment)
+
+			<xsl::if(test=@source)
+				<xsl::for-each(select=fragment)
+					<div.-source.block-source
+						<xsl::for-each(select=*)
+							<xsl::call-template(name=display-element)
+
+	<xsl::template(match="Paml//*")
+		<xsl::call-template(name=copy-element)
+
+	# -------------------------------------------------------------------------
+	#
+	# PCSS STYLING
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(match="//PCSS")
+		<xsl::if(test=@source)
+			<div.PCSS-
+				<div.-source
+					<pre.block-source
+						<xsl::value-of(select=.)
+
+	# -------------------------------------------------------------------------
+	#
+	# JSXML
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(match="//JSXML")
+		<div.Block.JSXML-
+			<xsl::call-template(name=block-attributes)
+			# This is the XML node that we'll use to expand
+			<div.-xml(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",style=display:none;)
+				<xsl::attribute(name="id")
+					<xsl::choose
+						<xsl::when(test=@title)
+							<xsl::value-of(select=@title)
+						<xsl::otherwise
+							<xsl::text:jsxml_>
+							<xsl::value-of(select="generate-id(.)")
+				<xsl::for-each(select="fragment/jsx:Component/*")
+					<xsl::copy-of(select=.)
+			# This is the representation of the JSXML as a nice tree
+			<div.-source(data-type=xml)
+				<xsl::for-each(select="fragment/*")
+					<xsl::call-template(name=display-element)
+			# This is the JavaScript code to load and bind the JSXML
+			# TODO: We might want to factor this out
+			<script
+				onRuntimeReady(function(runtime){
+				var node_name = ( '<xsl::value-of(select="@title"):>' ||
+				                 'jsxml_<xsl::value-of(select="generate-id(.)"):>')
+				var node = document.getElementById(node_name);
+				runtime.modules.load("std.formats.jsxml", function(jsxml){
+					var text = '&lt;?xml version="1.0" encoding="UTF-8"?&gt;\n'
+					+ '&lt;jsx:Component xmlns:jsx="https://github.com/sebastien/jsxml" xmlns:on="https://github.com/sebastien/jsxml/actions" render="delta"&gt;'
+					+ node.innerHTML
+					+ '&lt;/jsx:Component&gt;';
+					var loader = new jsxml.Loader();
+					var xml = loader.parseXML(text);
+					jsxml.convert(xml).chain(function(_){return loader.loadScript(_.textContent, node_name)}).then(function(_){
+						console.log("VIEW", _);
+					});
+				})});
+
+
+	# -------------------------------------------------------------------------
+	#
+	# COMPONENT
+	#
+	# -------------------------------------------------------------------------
+	
+	<xsl::template(match="Component")
+		<div.Block.Component-
+			<xsl::call-template(name=block-attributes)
+			<div.Block-reference
+				<span:#>
+			<xsl::if(test=.//source)
+				<div.block-source
+					<xsl::value-of(select=.//source)
+			<div.-component.component
+				<xsl::attribute(name=data-component)
+					<xsl::value-of(select="@type")
+				<xsl::if(test=@name)
+					<xsl::attribute(name=data-name)
+						<xsl::value-of(select="@name")
+				<xsl::if(test=@binding-direction)
+					# If there is a binding direction, we'll execute
+					# the binding function once the component is loaded.
+					<xsl::attribute(name=data-onload)
+						<xsl::text:component>
+						<xsl::value-of(select="generate-id(.)")
+						<xsl::text:(component,node,name)>
+				<xsl::for-each(select=data)
+					<xsl::attribute(name="data-{@name}")
+						<xsl::value-of(select="./@value")
+			<xsl::if(test=@binding-direction)
+				# When there is a binding defined in the component, we'll
+				# identify the source and the target based on the binding's
+				# direction and then proxy the cells.
+				<script
+					<xsl::text:function component>
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:(component,node,name){var direction=">
+					<xsl::value-of(select="@binding-direction")
+					<xsl::text:" == "output" ? "-&gt;" : "&lt;-";>
+					<xsl::choose
+						<xsl::when(test="@binding-direction='output'")
+							<xsl::text:var source_name=">
+							<xsl::value-of(select="@binding-internal")
+							<xsl::text:";var source = component.network.cell(source_name);var target_name=">
+							<xsl::value-of(select="@binding-external")
+							<xsl::text:";var target = window.__block__.network.cell(target_name) || window.__block__.network.input(target_name).as(target_name);>
+						<xsl::otherwise
+							<xsl::text:var target_name=">
+							<xsl::value-of(select="@binding-internal")
+							<xsl::text:";var target = component.network.cell(target_name);var source_name=">
+							<xsl::value-of(select="@binding-external")
+							<xsl::text:";var source = window.__block__.network.cell(source_name) || window.__block__.network.input(source_name).as(source_name);>
+					<xsl::text:if (!source) {console.warn("Source cell `" + source_name + "`[" + direction + "] not defined in component", name);}
+					<xsl::text:if (!target) {console.warn("Target cell `" + target_name + "`[" + direction + "] not defined in component", name);}
+					<xsl::text:source &amp;&amp; source.proxy(target);}>
+
+
+	# -------------------------------------------------------------------------
+	#
+	# TEXTO STYLING
+	#
+	# -------------------------------------------------------------------------
+	
+	<xsl::template(match="Texto")
+		<div.Block.Texto-
+			<xsl::call-template(name=block-attributes)
+			<div.Block-reference
+				<span:#>
+			<div.block-content
+				<xsl::apply-templates
+
+	<xsl::template(match="Texto//emphasis")
+		<em:<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//term")
+		<strong:<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//strong")
+		<strong:<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//variable")
+		<span.variable
+			<xsl::attribute(name=id)
+				<xsl::value-of(select=".")
+			‥
+
+	<xsl::template(match="Texto//pre")
+		<pre.block-source:<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//code")
+		<code:<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//link")
+		<a(target=_blank,href="{@target}")
+			<xsl::value-of(select=.)
+
+	<xsl::template(match="Texto//script")
+		<xsl::call-template(name=copy-element)
+
+	<xsl::template(match="Texto//coderef")
+		<code:<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//Paragraph")
+		<p
+			<xsl::apply-templates
+
+	<xsl::template(match="Texto//Section")
+		<section
+			<a(name="{@id}")
+			<xsl::apply-templates:>
+
+	<xsl::template(match="Texto//Heading")
+		<xsl::element(name="h{count(ancestor::Section)}")
+			<xsl::apply-templates
+
+	<xsl::template(match="//Texto//List")
+		# TODO: Implemetned ordered list
+		<ul
+			<xsl::apply-templates(select="ListItem")
+		
+	<xsl::template(match="//Texto//List/ListItem")
+		<li
+			<xsl::apply-templates
+
+	# -------------------------------------------------------------------------
+	#
+	# HELPERS
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=block-attributes)
+		<xsl::for-each(select="@*")
+			<xsl::attribute(name="data-{local-name(.)}")
+				<xsl::value-of(select=".")
+
+	<xsl::template(name=display-element,mode=display,match="*")
+		<div.xml-element-
+			<xsl::attribute(name=data-name)
+				<xsl::value-of(select="name(.)")
+			<xsl::attribute(name=class)
+				<xsl::text:xml-element >
+				<xsl::choose
+					<xsl::when(test="count(*)=0 and count(text())&lt;2")
+						<xsl::text: as-inline>
+					<xsl::otherwise
+						<xsl::text: as-block>
+			<span.-start|c
+				<span.-syntax:<xsl::text:&lt;>
+				<span.-name:<xsl::value-of(select="name(.)"):>
+				<xsl::if(test="count(@*)&gt;0")
+					<span.-attributes|c
+						<xsl::text: >
+						<xsl::for-each(select="@*")
+							<span.xml-attribute-
+								<xsl::attribute(name=data-name)
+									<xsl::value-of(select="name(.)")
+								<span.-name
+									<xsl::value-of(select="name(.)")
+								<span.-syntax:<xsl::text:=>
+								<span.-value
+									<xsl::value-of(select=".")
+				<span.-syntax:<xsl::text:&gt;>
+			<span.-content
+				<xsl::apply-templates(select="*|text()",mode=display)
+			<span.-end|c
+				<span.-syntax:<xsl::text:&lt;/>
+				<span.-name:
+					<xsl::value-of(select="name(.)")
+				<span.-syntax
+					<xsl::text:&gt;>
+
+	<xsl::template(match="text()",mode=display)
+		<span.text:<xsl::value-of(select="."):>
+			
+	<xsl::template(name=copy-element)
+		<xsl::element(name="{local-name(.)}",namespace="{namespace-uri(.)}")
+			<xsl::for-each(select="@*")
+				<xsl::copy-of(select=.)
+			<xsl::apply-templates
+
+	<xsl::template(name=copy-element-ns)
+		#<xsl::element(name="{local-name(.)}",namespace="{substring-before(name(.),':')}")
+		<xsl::element(name="{local-name(.)}",namespace="{namespace-uri(.)}")
+			<xsl::for-each(select="@*")
+				#<xsl::attribute(name="{local-name(.)}",namespace="{substring-before(name(.),':')}")
+				<xsl::attribute(name="{local-name(.)}",namespace="{namespace-uri(.)}")
+					<xsl::value-of(select=".")
+			<xsl::apply-templates
+
+# EOF

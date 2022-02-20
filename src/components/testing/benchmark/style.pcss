@@ -1,0 +1,64 @@
+
+COLOR_OK   = #00000020
+COLOR_FAIL = #DC003F
+COLOR_STATUS = #005BDC
+.Benchmark-:
+	border: 1px solid #00000010
+	padding: 1.5em
+	.-summary:
+		margin-bottom: 1.5em
+	.-event-:
+		.-status:
+			width: 1.5em
+			min-width: 0em !important
+			text-align: center
+			&:before:
+				width:         1.25em
+				height:        1.25em
+				border-radius: 1.25em
+				background-color: $COLOR_OK
+				font-size: 120%
+				display: inline-block
+				color: white
+				font-weight: 600
+			&!success:before:
+				content: "✔"
+			&!failure:before:
+				content: "✘"
+				background-color: $COLOR_FAIL
+			&!running:before:
+				content: "‥"
+		.-message-:
+			padding-left: 15px
+			font-weight: 600
+		.-rank-:
+			.-wrapper:
+				position: relative
+				background-color: #00000010
+				height: 25px
+				font-size: 9px
+				line-height: 15px
+				color: #00000080
+				text-transform: uppercase
+				padding: 5px
+				&:before:
+					content: "Fastest"
+					float: left
+				&:after:
+					content: "Slowest"
+					float: right
+			.-mark:
+				position: absolute
+				transition-property: left
+				transition-duration: 0.5s
+				left: 0%
+				top: 0px
+				bottom: 0px
+				border-left: 2px solid $COLOR_STATUS
+		.-duration-:
+			text-align: right
+			font-size: 13px
+			.-unit:
+				opacity: 0.5
+
+

@@ -1,0 +1,2696 @@
+<?xml version="1.0" encoding="UTF-8"?>
+# @import std.ui.render
+# @import std.ui.animation
+# @import std.ui.components
+<xsl::stylesheet(version="1.0",xmlns::xsl="http://www.w3.org/1999/XSL/Transform",xmlns::jsx="https://github.com/sebastien/jsxml")
+
+	# 2019-04-09: Added `<jsx::option(select)>` to pass options in bulk
+	#             in `<jsx::component>`
+	# TODO: jsx::bind should inhibit the network.
+	# TODO: jsx::children in for or templates should not be authorized
+	# unless the chlidren is some kind of array -- to be explored.
+
+	# FIXME: jsx::children is directly mounted with append child, which
+	# makes it fail when used diretly in an if. Mount should be used instead.
+
+	# FIXME: If children are interleaved with other nodes, then their
+	# order will be changed.
+
+	# TODO: jsx::T should not use templates if no { or } is present.
+
+	# TODO: conditionals still generate duplicate functions that prevent
+	#       from using closure-compiler.
+
+	# TODO: remove @jsx:map, @jsx:value, @jsx:html support
+	# TODO: Do a review on memory consumption, esp the Object.create which
+	#       can probably be cached.
+	# TODO: Adjust spacing (do not strip all the spaces)
+	# TODO: It might be possible to not store the context in the node at all
+	# TODO: Refactor create to use a tree-like structure. Makes source
+	#       more compact and readable.
+	# TODO: Think about how to select a specific mapped element and update
+	#       it. Ie, patch(["users", 0, name], 0, "John");
+	# TODO: There should be a retrieve(path) method as well
+
+	<xsl::output(method=text,encoding=UTF-8,indent=no)
+
+	# =========================================================================
+	# RENDERING INFORMATION
+	# =========================================================================
+	<xsl::template(name=delta-rendering-information)
+		<xsl::text:delta (2018-04-09/0.2.1)>
+
+	# =========================================================================
+	# IMPORTS
+	# =========================================================================
+
+	<xsl::template(name=delta-import-names)
+		<xsl::text:"std.ui.render">
+		<xsl::if(test="//jsx:transition")
+			<xsl::text:,"std.ui.animation">
+
+	<xsl::template(name=delta-import-arguments)
+		<xsl::text:render>
+		<xsl::if(test="//jsx:transition")
+			<xsl::text:,animation>
+
+	# -------------------------------------------------------------------------
+	#
+	# COMPONENT
+	#
+	# -------------------------------------------------------------------------
+	<xsl::template(name=delta-component)
+		<xsl::text@raw+escape
+			render.API.createViewFactory(
+			create_component,
+			update_component,
+			remove_component,
+			mount_component,
+			unmount_component);
+
+	# -------------------------------------------------------------------------
+	#
+	# COMPONENT HELPERS
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-helpers)
+		<xsl::call-template(name=delta-module-lib)
+		# TODO: Deprecate
+		# @jsx:map
+		<xsl::call-template(name=comment-section)
+			<xsl::with-param(name=text):<xsl::text:@jsx:map>
+		<xsl::for-each(select="//*[@jsx:map]")
+			<xsl::call-template(name=delta-jsx-map-attribute)
+		# jsx:if/elif/else
+		<xsl::call-template(name=comment-section)
+			<xsl::with-param(name=text):<xsl::text:jsx:if>
+		<xsl::for-each(select="//jsx:if")
+			<xsl::call-template(name=delta-jsx-conditional)
+		# NOTE: This is done in the jsx::if 
+		# <xsl::for-each(select="//jsx:elif")
+		# 	<xsl::call-template(name=delta-jsx-conditional)
+		# <xsl::for-each(select="//jsx:else")
+		# 	<xsl::call-template(name=delta-jsx-conditional)
+		# jsx:for
+		<xsl::call-template(name=comment-section)
+			<xsl::with-param(name=text):<xsl::text:jsx:for>
+		<xsl::for-each(select="//jsx:for")
+			<xsl::call-template(name=delta-jsx-for)
+		# jsx:template
+		<xsl::call-template(name=comment-section)
+			<xsl::with-param(name=text):<xsl::text:jsx:template>
+		<xsl::for-each(select="//jsx:template")
+			<xsl::call-template(name=delta-jsx-template)
+		# jsx:transition
+		<xsl::call-template(name=comment-section)
+			<xsl::with-param(name=text):<xsl::text:jsx:transition>
+		# Transition factory
+		<xsl::choose
+			# This takes care of creating the transition and effectors, as
+			# well as a function that ensures an animator is created and that
+			# a tween exists and is registered in the animator.
+			<xsl::when(test=//jsx:transition)
+				<xsl::for-each(select="//jsx:transition")
+					<xsl::call-template(name=delta-jsx-transition)
+		# jsx:Component
+		<xsl::call-template(name=comment-section)
+			<xsl::with-param(name=text):<xsl::text:jsx:Component>
+		<xsl::for-each(select="//jsx:Component")
+			<xsl::call-template(name=delta-jsx-component)
+
+	# @template delta-module-lib
+	# Defines the core functions used by the optimized rendering engine.
+	<xsl::template(name=delta-module-lib)
+		<xsl::text@raw+escape
+			// Aliases to the rendering API
+			const multiple     = render.multiple;
+			const mount        = render.API.mount.bind(render.API);
+			const unmount      = render.API.unmount.bind(render.API);
+			const createChild  = render.API.createChild;
+			const updateChild  = render.API.updateChild;
+			const mountChild   = render.API.mountChild;
+			const unmountChild = render.API.unmountChild;
+			const _tx          = render.API.createTextNode;
+			const _nd          = render.API.createElement;
+			const _nsnd        = render.API.createElementNS;
+			const _ct          = render.API.createComment;
+			const and          = render.API.and;
+			const or           = render.API.or;
+			const gt           = render.API.gt;
+			const lt           = render.API.lt;
+			const gte          = render.API.gte;
+			const lte          = render.API.lte;
+			const changed      = render.API.changed;
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:Component>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-component)
+		<xsl::call-template(name=comment-tag)
+		# == CREATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-create)
+		# == UPDATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-update-preamble)
+		<xsl::call-template(name=helper-update-fields)
+		<xsl::call-template(name=helper-update-postamble)
+		# == REMOVE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-remove)
+		# == MOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-mount)
+		# == UNMOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-unmount)
+		# == COMPONENT
+		<xsl::text:&#x000A;>
+		<xsl::text:const create_component = create_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:;&#x000A;>
+		<xsl::text:const update_component = update_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:;&#x000A;>
+		<xsl::text:const remove_component = remove_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:;&#x000A;>
+		<xsl::text:const mount_component = mount_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:;&#x000A;>
+		<xsl::text:const unmount_component = unmount_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:;&#x000A;>
+		<xsl::text:const component = {create:create_component, update:update_component, mount:mount_component};>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:template>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-template)
+		<xsl::call-template(name=comment-tag)
+		# == CREATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-create)
+			<xsl::with-param(name=name,select="@name")
+		# == UPDATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-update-preamble)
+			<xsl::with-param(name=name,select="@name")
+		<xsl::for-each(select=jsx:argument)
+			<xsl::text:&#x000A;&#x0009;const >
+			<xsl::value-of(select=@name)
+			<xsl::text: = _c[">
+			<xsl::value-of(select=@name)
+			<xsl::text:"]>
+			<xsl::if(test=@default)
+				<xsl::text: || >
+				<xsl::value-of(select=@default)
+			<xsl::text:;>
+		# We extract the selected value and assign it to the current data.
+		# NOTE: We only update the fields for the children
+		<xsl::for-each(select=*)
+			<xsl::call-template(name=helper-update-fields)
+		<xsl::call-template(name=helper-update-postamble)
+		# == REMOVE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-remove)
+			<xsl::with-param(name=name,select="@name")
+		# == MOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-mount)
+			<xsl::with-param(name=name,select="@name")
+		# == UNMOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-unmount)
+			<xsl::with-param(name=name,select="@name")
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:transition>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-transition)
+	# Creates transition fonctions to be used to "tween" values set during
+	# rendering. Transition functions are decomponsed in the transition
+	# itself, and the effector. The transition determines the interpolation
+	# of the value, while the effector determines the application of the
+	# value.
+		<xsl::call-template(name=comment-tag)
+		# === GENERATOR
+		# We create the transition generator. This function takes care
+		# of instanciating a new transition trought the context's factory
+		# and returns it.
+		<xsl::text:&#x000A;>
+		<xsl::variable(name=name,select=@name)
+		# We define the transition ID
+		<xsl::variable(name=tid)
+			<xsl::value-of(select="generate-id()")
+			<xsl::text:__>
+			<xsl::value-of(select=$name)
+		# -- @delay
+		<xsl::variable(name=delay)
+			<xsl::choose
+				<xsl::when(test="jsx:delay[@value]|@delay")
+					<xsl::text:(>
+					<xsl::value-of(select=jsx:delay/@value|@delay)
+					<xsl::text:)>
+				<xsl::when(test="jsx:delay")
+					<xsl::for-each(select="jsx:delay")
+						<xsl::call-template(name=delta-jsx-transition__option)
+				<xsl::otherwise
+					<xsl::text:undefined>
+		# -- @duration
+		<xsl::variable(name=duration)
+			<xsl::choose
+				<xsl::when(test="jsx:duration[@value]|@duration")
+					<xsl::text:(>
+					<xsl::value-of(select=jsx:duration/@value|@duration)
+					<xsl::text:)>
+				<xsl::when(test="jsx:duration")
+					<xsl::for-each(select="jsx:duration")
+						<xsl::call-template(name=delta-jsx-transition__option)
+				<xsl::otherwise
+					<xsl::text:undefined>
+		# -- @easing
+		<xsl::variable(name=easing)
+			<xsl::choose
+				<xsl::when(test="jsx:easing[@type]")
+					<xsl::text:(">
+					<xsl::value-of(select="jsx:easing/@type")
+					<xsl::text::>
+					<xsl::choose
+						<xsl::when(test="jsx:easing/@subtype")
+							<xsl::value-of(select="jsx:easing/@subtype")
+						<xsl::otherwise
+							<xsl::text:out>
+					<xsl::text:")>
+				<xsl::when(test="@easing")
+					<xsl::text:(">
+					<xsl::value-of(select="@easing")
+					<xsl::text:")>
+				<xsl::when(test="jsx:easing")
+					<xsl::for-each(select="jsx:easing")
+						<xsl::call-template(name=delta-jsx-transition__option)
+				<xsl::otherwise
+					<xsl::text:undefined>
+		# -- @from
+		<xsl::variable(name=from)
+			<xsl::choose
+				<xsl::when(test="@from|jsx:from")
+					<xsl::for-each(select="@from|jsx:from")
+						<xsl::call-template(name=delta-jsx-transition__option)
+				<xsl::otherwise
+					<xsl::text:undefined>
+		# -- @to
+		<xsl::variable(name=to)
+			<xsl::choose
+				<xsl::when(test="@to|jsx:to")
+					<xsl::for-each(select="@to|jsx:to")
+						<xsl::call-template(name=delta-jsx-transition__option)
+				<xsl::otherwise
+					<xsl::text:undefined>
+		<xsl::variable(name=value)
+			<xsl::choose
+				<xsl::when(test="jsx:value")
+					<xsl::for-each(select="jsx:value")
+						<xsl::call-template(name=delta-jsx-transition__option)
+							<xsl::with-param(name=preamble)
+								<xsl::text:function(value,source,destination,k,data,index){var _=data;
+				<xsl::otherwise
+					<xsl::text:undefined>
+
+
+		# The actual function
+		<xsl::text:&#x000A;function transition_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:(key,_d,_i,_p,_c,_m,effector,phase) {>
+		<xsl::text:&#x000A;&#x0009;var t = _m[key];>
+		<xsl::text:&#x000A;&#x0009;if (!t){>
+		<xsl::text:&#x000A;&#x0009;&#x0009;t=_m[key]=_c.transition({>
+		# @delay
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;delay:>
+		<xsl::value-of(select="$delay")
+		<xsl::text:,>
+		# @duration
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;duration:>
+		<xsl::value-of(select="$duration")
+		<xsl::text:,>
+		# @easing
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;easing:>
+		<xsl::value-of(select="$easing")
+		<xsl::text:,>
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;from:>
+		<xsl::value-of(select="$from")
+		<xsl::text:,>
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;to:>
+		<xsl::value-of(select="$to")
+		<xsl::text:,>
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;processor:>
+		<xsl::value-of(select="$value")
+		<xsl::text:,>
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;effector:effector>
+		<xsl::text:&#x000A;&#x0009;})};>
+		<xsl::text:&#x000A;&#x0009;return t(_d, _i, _p, _c, _m,phase);>
+		<xsl::text:&#x000A;}&#x000A;>
+		# === EFFECTORS
+		# TODO: We might want to guard the effectors if the value did not change
+		# --- jsx:attributes
+		<xsl::for-each(select="//jsx:attribute[@transition=$name]|//jsx:value[@transition=$name]|//jsx:style[@transition=$name]")
+			# We declare the effector that is used to applied the interpolated
+			# value to the resulting element.
+			<xsl::text:&#x000A;function effector_>
+			<xsl::call-template(name=string-safekey)
+				<xsl::with-param(name=text,select=$name)
+			<xsl::text:_>
+			<xsl::value-of(select="generate-id()")
+			<xsl::text:(_v,_i,_n,_c,_m) {&#x000A;&#x0009;var _=_v,data=_v,index=_i,node=_n,context=_c,mapping=_m;var _r=_v;>
+			<xsl::call-template(name=value-formatter)
+				<xsl::with-param(name=formatter)
+					<xsl::call-template(name=value-formatter__helper)
+			<xsl::choose
+				<xsl::when(test="self::jsx:attribute")
+					<xsl::call-template(name=delta-jsx-attribute__effector)
+				<xsl::when(test="self::jsx:style")
+					<xsl::call-template(name=delta-jsx-style__effector)
+				<xsl::when(test="self::jsx:value")
+					<xsl::call-template(name=delta-jsx-value__effector)
+			<xsl::text:&#x000A;}>
+
+		# == UPDATE
+		<xsl::text:&#x000A;>
+
+	<xsl::template(name=delta-jsx-transition__option)
+		<xsl::param(name=preamble)
+			<xsl::text:function(_d,_i,_n,_c){var _=_d;var index=_i;>
+		<xsl::value-of(select=$preamble)
+		<xsl::if(test=@select)
+			<jsx::text:_ = >
+			<xsl::call-template(name=value-extractor__select)
+				<xsl::with-param(name=selector,select=@select)
+			<jsx::text:;>
+		<xsl::text:return (>
+		<xsl::value-of(select=.)
+		<xsl::text:)}>
+
+	# -------------------------------------------------------------------------
+	#
+	# @jsx:map
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-map-attribute)
+		<xsl::text:/* ┈┈┈┈ @jsx:map='>
+		<xsl::value-of(select=@jsx:map)
+		<xsl::text:' */>
+		# == CREATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-create)
+		# == UPDATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-update-preamble)
+		# NOTE: We only update the fields for the children
+		<xsl::if(test=@jsx:as)
+			<xsl::text:var >
+			<xsl::value-of(select=@jsx:as)
+			<xsl::text: = _d>
+		<xsl::if(test=@jsx:default)
+			<xsl::call-template(name=delta-jsx-default)
+				<xsl::with-param(name=target)
+					<xsl::choose
+						<xsl::when(test=@jsx:as)
+							<xsl::text:>
+							<xsl::value-of(select=@jsx:as)
+						<xsl::otherwise
+							<xsl::text:_d>
+				<xsl::with-param(name=subtarget)
+					<xsl::if(test=@jsx:as)
+						<xsl::text:_d>
+				<xsl::with-param(name=value,select=@jsx:default)
+		<xsl::for-each(select=*)
+			<xsl::call-template(name=helper-update-fields)
+		<xsl::call-template(name=helper-update-postamble)
+		# == REMOVE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-remove)
+		# == MOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-mount)
+		# == UNMOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-unmount)
+
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:for>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-for)
+		<xsl::call-template(name=comment-tag)
+		# == CREATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-create)
+		# == UPDATE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-update-preamble)
+		# We extract the selected value and assign it to the current data.
+		# NOTE: We only update the fields for the children
+		<xsl::for-each(select=*)
+			<xsl::call-template(name=helper-update-fields)
+		<xsl::call-template(name=helper-update-postamble)
+		# == REMOVE
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-remove)
+		# == MOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-mount)
+		# == UNMOUNT
+		<xsl::text:&#x000A;>
+		<xsl::call-template(name=helper-unmount)
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:if>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-conditional)
+		<xsl::text:&#x000A;>
+		<xsl::text:&#x000A;/* delta-jsx-conditional START */>
+		<xsl::call-template(name=delta-jsx-conditional-branch-loop)
+			<xsl::with-param(name=step,select=0)
+		<xsl::text:&#x000A;/* delta-jsx-conditional END */>
+
+	<xsl::template(name=delta-jsx-conditional-branch-loop)
+		# NOTE: This requires some explanation. The elif/else tabs are never
+		# created directly, but rather lazily created on activation of the
+		# branch. The elif/else have no direct update_NNN function, but instead
+		# have an update_NNN_branch function.
+		<xsl::param(name=step)
+		<xsl::if(test="$step=0 or self::jsx:elif or self::jsx:else")
+			<xsl::text:&#x000A;/* delta-jsx-conditional-branch */>
+			<xsl::call-template(name=comment-tag)
+			<xsl::text:&#x000A;>
+			<xsl::call-template(name=helper-create)
+			<xsl::text:&#x000A;>
+			<xsl::call-template(name=helper-update-preamble)
+				<xsl::with-param(name=name)
+					<xsl::value-of(select="generate-id()")
+					<xsl::text:_branch>
+			<xsl::for-each(select=*)
+				<xsl::call-template(name=helper-update-fields)
+			<xsl::call-template(name=helper-update-postamble)
+			<xsl::text:&#x000A;>
+			<xsl::call-template(name=helper-remove)
+			<xsl::text:&#x000A;>
+			<xsl::call-template(name=helper-mount)
+			<xsl::text:&#x000A;>
+			<xsl::call-template(name=helper-unmount)
+			<xsl::for-each(select="following-sibling::*[1]")
+				<xsl::call-template(name=delta-jsx-conditional-branch-loop)
+					<xsl::with-param(name=step,select="$step+1")
+
+
+	# This is a fairly complicated template. The key thing to keep in mind
+	# is that the `jsx:{if|elif|else}` nodes don't create new nodes directly,
+	# their children are appended to the parent. This creates some tough cases
+	# with nested conditionals, which we deal here now (which was not the
+	# case pre-20171023).
+	<xsl::template(name=delta-jsx-conditional-select)
+		# We extract the selected value and assign it to the current data.
+		# The idea is the following:
+		# - Each branch is assigned a number (based on its position)
+		# - Each branch child nodes are mounted/unmounted if the condition
+		#   is different from the previous one
+		# - The matching branch's nodes are ALWAYS UPDATED, even if the branch
+		#   already matched before (it's subtle, but important)
+		<xsl::text:&#x000A;&#x0009;/* === CONDITIONAL:START */>
+		<xsl::variable(name=condition)
+			<xsl::text:c_>
+			<xsl::value-of(select="generate-id()")
+		# We defined the variables that will hold which condition matches
+		<xsl::text:&#x000A;&#x0009;var ><xsl::value-of(select=$condition):><xsl::text:_current = false;>
+		<xsl::text:&#x000A;&#x0009;var ><xsl::value-of(select=$condition):><xsl::text:_previous = _m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:?"]>;
+		# We determine the matching branch
+		<xsl::text:&#x000A;&#x0009;/* --- Selecting matching branch */>
+		<xsl::call-template(name=delta-jsx-conditional-select-loop)
+			<xsl::with-param(name=condition,select=$condition)
+			<xsl::with-param(name=step,select=0)
+
+		# If result is the same, do not need to mount/unmount
+		<xsl::text:&#x000A;&#x0009;/* ---  Only do something if result is different */>
+		<xsl::text:&#x000A;&#x0009;if (>
+		<xsl::value-of(select=$condition):><xsl::text:_current !== >
+		<xsl::value-of(select=$condition):><xsl::text:_previous) {>
+		# We clear the previous match
+		<xsl::text:&#x000A;&#x0009;&#x0009;_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:="]=null;>
+		# Mounts matching nodes
+		<xsl::call-template(name=delta-jsx-if-branch-toggle)
+			<xsl::with-param(name=operation,select="'mount'")
+			<xsl::with-param(name=condition,select=$condition)
+		# Unmounts non-matching nodes
+		<xsl::call-template(name=delta-jsx-if-branch-toggle)
+			<xsl::with-param(name=operation,select="'unmount'")
+			<xsl::with-param(name=condition,select=$condition)
+		# We make sure to save the previous result
+		<xsl::text:&#x000A;&#x0009;&#x0009;/* --- Saving result of conditional */>
+		<xsl::text:&#x000A;&#x0009;&#x0009;_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:?"] = ><xsl::value-of(select=$condition):><xsl::text:_current;>
+		# That's the closing of the main guard
+		<xsl::text:&#x000A;&#x0009;}>
+		# We always update the branch. This might go before the mounting, but
+		# that might have bad side-effects
+		<xsl::call-template(name=delta-jsx-if-branch-toggle)
+			<xsl::with-param(name=operation,select="'update'")
+			<xsl::with-param(name=condition,select=$condition)
+		<xsl::text:&#x000A;&#x0009;/* === END:CONDITIONAL */>
+
+
+	#NOTE: Like delta-jsx-conditional-select-branch, iterates and recurses
+	#on contiguous if-elif-else, but will stop whenever it's not the case.
+	<xsl::template(name=delta-jsx-conditional-select-loop)
+		<xsl::param(name=step)
+		<xsl::param(name=condition)
+		<xsl::if(test="$step=0 or self::jsx:elif or self::jsx:else")
+			<xsl::text:&#x000A;&#x0009; if (>
+			<xsl::value-of(select="$condition")
+			<xsl::text:_current===false) {>
+			# Extracts the value to test
+			<xsl::call-template(name=value-extractor)
+				<xsl::with-param(name=indent):
+					<xsl::text:&#x000A;&#x0009;&#x0009;>
+			<xsl::text:_=_r;>
+			# We test the branch's condition
+			<xsl::text:&#x000A;&#x0009;&#x0009;if (>
+			<xsl::choose
+				<xsl::when(test=self::jsx:else)
+					<xsl::text:true>
+				<xsl::when(test=@test)
+					<xsl::value-of(select=@test)
+				<xsl::otherwise
+					<xsl::text:_>
+			# If the condition is true, then the current branch is set to
+			# the branch's position
+			<xsl::text:){>
+			<xsl::value-of(select=$condition):><xsl::text:_current = >
+			<xsl::value-of(select='$step')
+			<xsl::text:;}>
+			<xsl::text:&#x000A;&#x0009;}>
+			<xsl::for-each(select="following-sibling::*[1]")
+				<xsl::call-template(name=delta-jsx-conditional-select-loop)
+					<xsl::with-param(name=step,select="$step+1")
+					<xsl::with-param(name=condition,select="$condition")
+
+	# Mounts/unmounts/updates all the nodes within a if/else branch. This
+	# takes the `condition` variable name and the `operation` which
+	# is either `mount` or `unmount`.
+	# TODO: Rename to conditional
+	<xsl::template(name=delta-jsx-if-branch-toggle)
+		<xsl::param(name=condition)
+		<xsl::param(name=operation)
+			<xsl::text:mount>
+		<xsl::variable(name=pid)
+			<xsl::value-of(select="generate-id()")
+		<xsl::choose
+			<xsl::when(test="$operation='mount'")
+				<xsl::text:&#x000A;&#x0009;&#x0009;/* ------  Mounting */>
+			<xsl::when(test="$operation='update'")
+				<xsl::text:&#x000A;&#x0009;&#x0009;/* ------  Updating */>
+			<xsl::otherwise
+				<xsl::text:&#x000A;&#x0009;&#x0009;/* ------  UNMounting */>
+
+		# The whole logic is based on a switch statement that swtiches the 
+		# matching branch number.
+		<xsl::text:&#x000A;&#x0009;&#x0009;switch(>
+		<xsl::choose
+			<xsl::when(test="$operation='unmount'")
+				<xsl::value-of(select=$condition):><xsl::text:_previous){>
+			<xsl::otherwise
+				<xsl::value-of(select=$condition):><xsl::text:_current){>
+		# We select all the branches
+		<xsl::call-template(name=delta-jsx-if-branch-toggle-loop)
+			<xsl::with-param(name=condition,select="$condition")
+			<xsl::with-param(name=operation,select="$operation")
+			<xsl::with-param(name=pid,select="$pid")
+			<xsl::with-param(name=step,select="0")
+
+		# We ensure that the if branch is properly mounted
+		<xsl::text:&#x000A;&#x0009;&#x0009;}>
+
+	# This is the loop over contiguous if-elif-else
+	<xsl::template(name=delta-jsx-if-branch-toggle-loop)
+		<xsl::param(name=condition)
+		<xsl::param(name=operation)
+		<xsl::param(name=pid)
+		<xsl::param(name=step)
+		<xsl::if(test="$step=0 or self::jsx:elif or self::jsx:else")
+			<xsl::variable(name=nid)
+				<xsl::value-of(select="generate-id()")
+			<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;/* node >
+			<xsl::value-of(select="$nid")
+			<xsl::text: */>
+			# If the matching branch is this one, then we execute the
+			# mounting/unmounting
+			<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;case >
+			<xsl::value-of(select="$step")
+			<xsl::text::>
+			# NOTE: Here we're updating/mounting the branch first (before
+			# updating the fields) because we want to make sure the
+			# parents of the children are mounted first. This is not the
+			# best case scenario for performance, but his creates problems
+			# in situations like:
+			#
+			# ```
+			# <jsx::if(select=XXX)
+			#    <jsx::for(select=XXX)
+			# ```
+			#
+			# If the `jsx:for` is mounted before the `jsx:if`, then it is
+			# not adedd properly.
+			# If we're mounting, we need to update the fields of the mounted
+			# branch before
+			<xsl::if(test="$operation='update' or $operation='mount'")
+				# We lazily create the nodes for update and mount
+				<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;>
+				<xsl::text:if(!_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:*"]){_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:*"]=create_>
+				<xsl::value-of(select="$nid")
+				<xsl::text:(_d,_i,_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:"],_c,_m);}>
+			# We don't forget to log the mounted roots
+			<xsl::if(test="$operation='mount'")
+				<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;>
+				<xsl::text:_m[">
+				<xsl::value-of(select="$pid")
+				<xsl::text:="]=_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:*"];>
+				<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;>
+				<xsl::text:_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:.."]=_m[">
+				<xsl::value-of(select="$pid")
+				<xsl::text:"];>
+
+			<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;>
+			<xsl::value-of(select="$operation")
+			<xsl::text:_>
+			<xsl::value-of(select="$nid")
+			<xsl::if(test="$operation='update'")
+				<xsl::text:_branch>
+			<xsl::text:(_d,_i,_m[">
+			<xsl::value-of(select="$nid")
+			<xsl::text:"],_c,_m,_c.component);>
+			<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;>
+			# If the operation is not an update (ie MOUNT or UNMOUNT),
+			# we need to use the rendering engine to mount/unmont.
+			# <xsl::if(test="$operation!='update'")
+			# 	<xsl::value-of(select="$operation")
+			# 	<xsl::text:(_m[">
+			# 	<xsl::value-of(select="$nid")
+			# 	<xsl::text:*"],_m[">
+			# 	<xsl::value-of(select="$nid")
+			# 	<xsl::text:"],null,_c,_m);>
+
+			# <xsl::otherwise
+			# 	<xsl::call-template(name=delta-jsx-if-branch-updater)
+			# 		<xsl::with-param(name=operation)
+			# 			<xsl::value-of(select="$operation")
+			<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;break;>
+			<xsl::for-each(select="following-sibling::*[1]")
+				<xsl::call-template(name=delta-jsx-if-branch-toggle-loop)
+					<xsl::with-param(name=condition,select="$condition")
+					<xsl::with-param(name=operation,select="$operation")
+					<xsl::with-param(name=pid,select="$pid")
+					<xsl::with-param(name=step,select="$step+1")
+
+
+	# A helper function for the `detla-jsx-if-branch` that takes care of 
+	# mounting/unmounting nodes, taking into account the special cases of 
+	# jsx:{if|elif|else} children and jsx:component children. These child nodes
+	# are special because they don't create corresponding DOM nodes, so we need
+	# to recursively unmount their content.
+	<xsl::template(name=delta-jsx-if-branch-updater)
+		<xsl::param(name=operation)
+		# And now we do the (un)mounting
+		<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;_c.effects.>
+		<xsl::value-of(select="$operation")
+		<xsl::text:([>
+		# We don't want to (un)mount jsx::log, argument, default, etc. However
+		# we'll mount all the others, including the jsx:if/elif/else and for.
+		<xsl::for-each(select="(*|text()[string-length(normalize-space(.))!=0])[not(self::jsx:log) and not(self::jsx:argument) and not(self::jsx:default)]")
+			<xsl::variable(name=localname,select='local-name()')
+			<xsl::choose
+				<xsl::when(test="$operation='unmount' and (count(/jsx:Component/jsx:import[@as=$localname])!=0 or $localname='component')")
+					<xsl::text:/* child component */>
+				<xsl::otherwise
+					<xsl::text:_m[">
+					<xsl::value-of(select="generate-id()")
+					<xsl::text:"]>
+					<xsl::if(test="position()!=last()")
+						<xsl::text:,>
+		<xsl::text:], _m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:"]);>
+		# NOTE: Before 2018-02-06 we were directly mounting nested jsx:{if,elif,else}
+		# but this should not be necessary, because the rendering now takes
+		# care of unmounting virtual nodes.
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:value>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-value)
+		<xsl::choose
+			# === TRANSITION
+			<xsl::when(test="@transition")
+				<xsl::call-template(name=helper-jsx-transition)
+			# === NO TRANSITION
+			<xsl::otherwise
+				<xsl::call-template(name=helper-jsx-direct)
+					<xsl::with-param(name=body)
+						<xsl::call-template(name=delta-jsx-value__effector)
+
+	<xsl::template(name=delta-jsx-value__effector)
+		<xsl::text:_c.effects.text(_v === null || _v === undefined ? "" : "" + _v, _n);>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:T>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-T)
+		# TODO: Error if jsx:T is within not compatible jsx tags
+		# TODO: Invalidate if locales has changed
+		<xsl::if(test=@transition)
+			<xsl::text:console.error("jsx:T has a transition attribute @>
+			<xsl::value-of(select="generate-id()")
+			<xsl::text:");>
+		<xsl::call-template(name=helper-jsx-direct)
+			# TODO: Should select data.locale by default
+			<xsl::with-param(name=select)
+				# NOTE: Before 2019-06-01 we were adding data.locale but
+				# we don't do this anymore, as the component's translate
+				# method has the locale already.
+				<xsl::value-of(select=@select)
+			<xsl::with-param(name=default)
+				<xsl::value-of(select=@default)
+			<xsl::with-param(name=value)
+				<xsl::choose
+					<xsl::when(test=@template)
+						# We include the value as code, but we do need
+						# to make sure data points to the overall data,
+						# not the selected data point. It's a bit coslty
+						# to do that, we could alternatively swap variables.
+						# --
+						# NOTE: Here we need to get the global data and the
+						# data before the select, as the template and select
+						# need to be evaluated at the same scope.
+						<xsl::text:(function(data,_){return (>
+						<xsl::value-of(select=@template)
+						<xsl::text:);})(_c.data,_d)>;
+					<xsl::otherwise
+						# TODO: We might want to support not stripping the
+						# contents.
+						<xsl::call-template(name=string-quoted)
+							<xsl::with-param(name=text)
+								<xsl::call-template(name=string-stripped)
+									<xsl::with-param(name=text)
+										<jsx::for-each(select="./*|./text()")
+											<xsl::call-template(name=string-xml)
+												<xsl::with-param(name=node,select=.)
+			<xsl::with-param(name=body)
+				<xsl::call-template(name=delta-jsx-T__effector)
+
+	<xsl::template(name=delta-jsx-T__effector)
+		<xsl::if(test="string-length(normalize-space(.))+string-length(normalize-space(@template))=0")
+			<xsl::text:_v="{_}";>
+		<xsl::choose
+			# This automatically detects wether we have HTML or not
+			<xsl::when(test="@type and @type!='text' or @type='html'")
+				<xsl::text:_c.effects.html(_c.translate(_v,_,_i, _n), _n);>
+			<xsl::otherwise
+				<xsl::text:_c.effects.text(_c.translate(_v,_,_i, _n), _n);>
+
+	# -------------------------------------------------------------------------
+	#
+	# @jsx:value
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-value-attribute)
+		<xsl::text:&#x000A;/* ┈┈┈┈ @jsx:value=>
+		<xsl::value-of(select=@jsx:value)
+		<xsl::text:' */>
+		<xsl::call-template(name=value-extractor)
+			<xsl::with-param(name=select)
+				<xsl::choose
+					<xsl::when(test=@jsx:select)
+						<xsl::value-of(select=@jsx:select)
+					<xsl::otherwise
+						<xsl::value-of(select=@jsx:value)
+			<xsl::with-param(name=as)
+				<xsl::value-of(select=@jsx:as)
+		# We retrieve the current node from the mapping
+		<xsl::text:_n=_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:"];>
+		# NOTE: Here we use a little trick. We create a `_ct` node that
+		# will hold the child text node containing the formatted
+		# value. Otherwise the default `_cn` child nodes will be used.
+		<xsl::text:var _ct=_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:T"]; if (!_ct) { _ct = _m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:T"] = _tx("");}>
+		<xsl::text:var _cn=[>
+		<xsl::for-each(select="*|text()[string-length(.)!=0]")
+			<xsl::text:_m[">
+			<xsl::value-of(select="generate-id()")
+			<xsl::text:"]>
+			<xsl::if(test="position()!=last()")
+				<xsl::text:,>
+		<xsl::text:];>
+		<xsl::call-template(name=value-assign)
+			<xsl::with-param(name=formatter)
+				<xsl::choose
+					<xsl::when(test=@jsx:select)
+						<xsl::value-of(select=@jsx:value)
+					<xsl::otherwise
+						<xsl::text:_r>
+			<xsl::with-param(name=always)
+				<xsl::choose
+					<xsl::when(test=@jsx:always)
+						<xsl::text:true>
+					<xsl::otherwise
+						<xsl::text:false>
+			<xsl::with-param(name=body)
+				<xsl::text:if(_r){_c.effects.text(_v ? "" + _v : "",_ct);_c.effects.children(_ct,_n)}>
+				<xsl::text:&#x000A;&#x0009;&#x0009;>
+				<xsl::text:else  {_c.effects.children(_cn,_n)}>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx:attribute>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-attribute)
+		<xsl::choose
+			# === TRANSITION
+			<xsl::when(test="@transition")
+				<xsl::variable(name=tname)
+					<xsl::value-of(select=@transition)
+				<xsl::choose
+					<xsl::when(test=@do)
+						<xsl::text:console.error("@transition attribute not allowed with @do attribute");
+					<xsl::when(test="@name='class'")
+						<xsl::text:console.error("@transition attribute not allowed with @name=class attribute");
+					<xsl::otherwise
+						# Here instead of transforming and update the value
+						# directly we delegate to the effector
+						<xsl::call-template(name=helper-jsx-transition)
+			# === NO TRANSITION
+			<xsl::otherwise
+				# Implements code to update CSS classes, style and regular attributes,
+				# while also supporting transitions.
+				<xsl::call-template(name=helper-jsx-direct)
+					<xsl::with-param(name=body)
+						# The when is only defined for @do
+						<xsl::if(test="@when and @do!='toggle' and @do!='~'")
+							<xsl::text:if (>
+							<xsl::value-of(select=@when)
+							<xsl::text:) {
+						<xsl::choose
+							# Are we updating a CLASS attribute?
+							<xsl::when(test="@name='class'")
+								<xsl::choose
+									<xsl::when(test="@do='append' or @do='add' or @do='+'")
+										<xsl::text:_c.effects.addclass(_v,_n.parentNode)>
+									<xsl::when(test="@do='remove' or @do='-'")
+										<xsl::text:_c.effects.rmclass(_v,_n.parentNode)>
+									<xsl::when(test="@do='toggle' or @do='~'")
+										<xsl::choose
+											<xsl::when(test=@when)
+												# When the toggle is guarded, it means
+												# we add or remove based on the predicate
+												<xsl::text:if (>
+												<xsl::value-of(select="@when")
+												<xsl::text:) {>
+												<xsl::text:_c.effects.addclass(">
+												<xsl::value-of(select="@name")
+												<xsl::text:", _v, _n.parentNode);} else {>
+												<xsl::text:_c.effects.rmclass(">
+												<xsl::value-of(select="@name")
+												<xsl::text:", _v, _n.parentNode);}>
+											<xsl::otherwise
+												<xsl::text:_c.effects.toggleclass(_v,_n.parentNode)>
+									<xsl::otherwise
+										<xsl::text:_c.effects.setclass(_v,_n.parentNode)>
+							# Are we updating a STYLE attribute?
+							<xsl::when(test="@name='style'")
+								<xsl::call-template(name=delta-jsx-attribute__effector)
+							# Are we updating a REGULAR attribute?
+							<xsl::otherwise
+								<xsl::choose
+									<xsl::when(test="@do='append' or @do='+'")
+										<xsl::text:_c.effects.addattr(">
+										<xsl::value-of(select="@name")
+										<xsl::text:", _v, _n.parentNode);>
+									<xsl::when(test="@do='remove' or @do='-'")
+										<xsl::text:_c.effects.rmattr(">
+										<xsl::value-of(select="@name")
+										<xsl::text:", _v, _n.parentNode);>
+									<xsl::when(test="@do='toggle' or @do='~'")
+										<xsl::choose
+											<xsl::when(test=@when)
+												# When the toggle is guarded, it means
+												# we add or remove based on the predicate
+												<xsl::text:if (>
+												<xsl::value-of(select="@when")
+												<xsl::text:) {>
+												<xsl::text:_c.effects.addattr(">
+												<xsl::value-of(select="@name")
+												<xsl::text:", _v, _n.parentNode);} else {>
+												<xsl::text:_c.effects.rmattr(">
+												<xsl::value-of(select="@name")
+												<xsl::text:", _v, _n.parentNode);}>
+											<xsl::otherwise
+												<xsl::text:_c.effects.toggleattr(">
+												<xsl::value-of(select="@name")
+												<xsl::text:", _v, _n.parentNode);>
+									<xsl::otherwise
+										<xsl::call-template(name=delta-jsx-attribute__effector)
+						<xsl::if(test="@when and @do!='toggle' and @do!='~'")
+							<xsl::text:}>
+
+	<xsl::template(name=delta-jsx-attribute__effector)
+		# A helper to generate the effect that is applied from an interpolated
+		# value.
+		<xsl::choose
+			<xsl::when(test="@name='style'")
+				<xsl::text:_c.effects.style(_v,_n.parentNode)>
+			<xsl::when(test="@name='data'")
+				# This is a special attribute that sets the _data and _index properties
+				<xsl::text:_n.parentNode._data  = _v;>
+				<xsl::text:_n.parentNode._index = index;>
+			<xsl::when(test="@namespace")
+				<xsl::text:_c.effects.setattrns(">
+				<xsl::value-of(select="@namespace")
+				<xsl::text:", ">
+				<xsl::value-of(select="@name")
+				<xsl::text:", _v, _n.parentNode);>
+			<xsl::otherwise
+				<xsl::text:_c.effects.setattr(">
+				<xsl::value-of(select="@name")
+				<xsl::text:", _v, _n.parentNode);>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::style>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-style)
+		<xsl::choose
+			# === TRANSITION
+			<xsl::when(test="@transition")
+				<xsl::call-template(name=helper-jsx-transition)
+			# === NO TRANSITION
+			<xsl::otherwise
+				<xsl::call-template(name=helper-jsx-direct)
+					<xsl::with-param(name=body)
+						<xsl::call-template(name=delta-jsx-style__effector)
+
+	<xsl::template(name=delta-jsx-style__effector)
+		<xsl::text:_c.effects.style(">
+		<xsl::value-of(select="@name")
+		<xsl::text:", _v, _n.parentNode)>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::html>
+	#
+	# -------------------------------------------------------------------------
+
+	# TODO: Support transition?
+	<xsl::template(name=delta-jsx-html)
+		<xsl::call-template(name=helper-jsx-direct)
+			<xsl::with-param(name=body)
+				<xsl::text:_c.effects.html(_v,_n);>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::apply>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-apply)
+		# Some notable things about the jsx:apply:
+		# 1) Template is only applied at update, and only applied
+		#    once.
+		# 2) Template is always updated, even if there is no
+		#    change in data.
+		# Arugments
+		<xsl::choose
+			<xsl::when(test=jsx:argument)
+				<xsl::text:&#x000A;&#x0009;var _aa=Object.create(_c);>
+				<xsl::for-each(select=jsx:argument)
+					<xsl::call-template(name=comment-tag)
+					<xsl::call-template(name=value-extractor)
+					<xsl::text:&#x000A;&#x0009;_=_r;_aa[">
+					<xsl::value-of(select=@name)
+					<xsl::text:"] = (>
+					<xsl::choose
+						<xsl::when(test="string-length(normalize-space(.))!=0")
+							<xsl::value-of(select="normalize-space(.)")
+						<xsl::otherwise
+							<xsl::text:_>
+					<xsl::text:);>
+			<xsl::otherwise
+				<xsl::text:var _aa=_c;>
+		<xsl::call-template(name=comment-tag)
+		<xsl::call-template(name=value-extractor)
+		# We get a mapping local to this specific application. This will
+		# allow for recursive calls.
+		<xsl::text:&#x000A;&#x0009;_lm=_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:()"]=_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:()"]||{roots:undefined};>
+		# Create (lazily)
+		<xsl::text:&#x000A;&#x0009;if(!_lm.roots){>
+		# -- Create callback
+		<xsl::text:_lm.roots=create_>
+		<xsl::value-of(select=@template)
+		<xsl::text:(_r,_i,_m[">
+		<xsl::value-of(select="generate-id(.)")
+		# -- Mount callback
+		<xsl::text:"],_c,_lm);mount_>
+		<xsl::value-of(select=@template)
+		<xsl::text:(_r,_i,_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:"],_c,_lm);
+		# -- Rendering mount
+		<xsl::text:_c.effects.mount(_lm.roots,_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:"])>
+		<xsl::text:}>
+		# Update
+		<xsl::text:&#x000A;&#x0009;update_>
+		<xsl::value-of(select=@template)
+		<xsl::text:(_r,_i,_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:"],_aa,_lm);>
+		# NOTE: There's no remove of apply
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::component>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-component-instanciate)
+		<xsl::param(name=classname,select="''")
+		# Here we delegate the create/update cycle to a component. We don't
+		# make any assertion about which technology the component is implemented
+		# in, and we expect the context's component to handle all the details.
+		#
+		# Here are the expectations:
+		# - `_c.component.loadComponent` returns an object with `then(callback)` 
+		#   method to execute once the component is loaded.
+		# - `_c.component.createChild(name,type,node,attr,children)` to create an instance
+		#   of the component
+		# - That the instance of the new component has a render method.
+		<xsl::text:&#x000A;/* ┈┈┈ jsx:component @type='>
+		<xsl::value-of(select="@type")
+		<xsl::text:'>
+		<xsl::if(test=@jsx:ref)
+			<xsl::text: @jsx:ref='>
+			<xsl::value-of(select="normalize-space(@jsx:ref)")
+			<xsl::text:'>
+		<xsl::text: */>
+		# This will hold the options for the component
+		<xsl::variable(name=nid)
+			<xsl::value-of(select="generate-id()")
+		<xsl::variable(name=oid)
+			<xsl::text:o_>
+			<xsl::value-of(select="generate-id()")
+		# NOTE: We do need to share the options
+		<xsl::text:&#x000A;&#x0009;/* This will hold the options, and will be statefully updated */>
+		<xsl::text:&#x000A;&#x0009;var o_changed=false;const >
+		<xsl::value-of(select="$oid")
+		<xsl::text:=_m[">
+		<xsl::value-of(select="$oid")
+		<xsl::text:*"]=_m[">
+		<xsl::value-of(select="$oid")
+		<xsl::text:*"]||{};>
+		# We define the options first, if it's there
+		<xsl::if(test="jsx:options")
+			<xsl::for-each(select="jsx:options")
+				<xsl::text:&#x000A;&#x0009;>
+				<xsl::call-template(name=delta-jsx-component-instanciate-options)
+					<xsl::with-param(name=oid,select='$oid')
+		# We iterate on the <jsx:option> node. This will populate the options and
+		# also update the `o_changed` variable to indicate that the options have changed.
+		<xsl::if(test="not(self::jsx:component)")
+			<xsl::for-each(select="@*[substring-before(name(),':')!='jsx' and substring-before(name(),':')!='on']")
+				<xsl::call-template(name=delta-jsx-component-instanciate-option)
+					<xsl::with-param(name=name,select='name()')
+					<xsl::with-param(name=value)
+						<xsl::call-template(name=string-template-quoted)
+							<xsl::with-param(name=text,select=.)
+					<xsl::with-param(name=oid,select='$oid')
+		<xsl::for-each(select=jsx:option)
+			<xsl::text:&#x000A;&#x0009;>
+			<xsl::call-template(name=delta-jsx-component-instanciate-option)
+				<xsl::with-param(name=oid,select='$oid')
+		<xsl::text:&#x000a;&#x0009;>
+
+
+		# STEP 1) We create the data structure that holds the contextual
+		# information about the child.
+		<xsl::variable(name=context)
+			<xsl::text:_m[">
+			<xsl::value-of(select="$nid")
+			<xsl::text:^C"]>
+		<xsl::text:&#x000a;&#x0009;_=_d;_i=index;var _c_c=>
+		<xsl::value-of(select="$context")
+		<xsl::text:=>
+		<xsl::value-of(select="$context")
+		<xsl::text:?>
+		<xsl::value-of(select="$context")
+		<xsl::text::{};>
+
+		# CHILD TYPE
+		<xsl::text:&#x000a;&#x0009;_c_c.type=>
+		<xsl::choose
+			<xsl::when(test="$classname!=''")
+				<xsl::value-of(select="$classname")
+			<xsl::when(test=@type)
+				<xsl::call-template(name=string-template-quoted)
+					<xsl::with-param(name=text,select="@type")
+			<xsl::otherwise
+				<jsx::text:console.log("jsx:component missing @type attribute")>
+		<xsl::text:;>
+
+		# CHILD NAME
+		<xsl::text:&#x000a;&#x0009;_c_c.name=>
+		<xsl::choose
+			<xsl::when(test=@jsx:ref)
+				<xsl::call-template(name=string-template-quoted)
+					<xsl::with-param(name=text,select="@jsx:ref")
+			<xsl::otherwise
+				<xsl::text:">
+				<xsl::value-of(select="$nid")
+				<xsl::text:">
+		<xsl::text:;>
+
+		# CHILD INDEX
+		<xsl::text:&#x000a;&#x0009;_c_c.index=>
+		<xsl::choose
+			<xsl::when(test=@jsx:refkey)
+				<xsl::call-template(name=string-template-quoted)
+					<xsl::with-param(name=text,select="@jsx:refkey")
+			<xsl::otherwise
+				<xsl::text:_i>
+		<xsl::text:;>
+
+		# CHILD OPTIONS
+		<xsl::text:&#x000a;&#x0009;_c_c.options=o_changed?>
+		<xsl::value-of(select="$oid")
+		<xsl::text::null;>
+
+		# CHILD PARENT NODE
+		<xsl::text:&#x000a;&#x0009;_c_c.node=_m[">
+		<xsl::value-of(select="$nid")
+		<xsl::text:"];>
+
+		# CHILD CHILDREN
+		<xsl::choose
+			<xsl::when(test=jsx:child)
+				<xsl::text:&#x000a;&#x0009;_c_c.children={"_":_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:*"]>
+				<xsl::for-each(select=jsx:child)
+					<xsl::text:,">
+					<xsl::value-of(select="@name")
+					<xsl::text:":_m[">
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:*"]>
+				<xsl::text:};>
+			<xsl::otherwise
+				<xsl::text:&#x000a;&#x0009;_c_c.children={"_":_m[">
+				<xsl::value-of(select="$nid")
+				<xsl::text:*"]};>
+		
+		# CHILD BINDING
+		<xsl::if(test="./jsx:bind")
+			<xsl::call-template(name=delta-jsx-component-bind_unbind)
+			<xsl::call-template(name=delta-jsx-component-bind_unbind)
+				<xsl::with-param(name=prefix)
+					<xsl::text:un>
+
+		# STEP 2) We create/update and mount child component
+		<xsl::text:&#x000a;&#x0009;_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:^C"]=updateChild(_c,_c_c);>
+		
+		# NOTE: We should maybe force a mount of the child in the edge case
+		# where it's borrowed from another component (ie. used as a tempalte, and then injected?)
+		# <xsl::text:&#x000a;&#x0009;mountChild(_c.component, _c_c.component, _m[">
+		# <xsl::value-of(select="generate-id()")
+		# <xsl::text:"]);>
+
+		# STEP 3) We store the previous information
+		<xsl::text@raw
+				
+				_c_c.previousIndex=_c_c.index;
+				_c_c.previousType=_c_c.type;
+				_c_c.previousComponent=_c_c.component;
+				_c_c.previousName=_c_c.name;
+				_c_c.previousOptions=_c_c.options;
+
+	<xsl::template(name=delta-jsx-component-bind_unbind)
+	# A helper template that create cell binding/unbinding based on the
+	# <jsx:bind> children of the component. The $prefix can be either
+	# empty (for binding) or `un` for unbinding.
+		<xsl::param(name=prefix)
+		<xsl::text:&#x000a;&#x0009;if(!_c_c.>
+		<xsl::value-of(select=$prefix)
+		<xsl::text:binding){_c_c.>
+		<xsl::value-of(select=$prefix)
+		<xsl::text:binding=function(parent,child){>
+		<xsl::for-each(select="./jsx:bind")
+			<xsl::text:&#x000a;&#x0009;&#x0009;>
+			<xsl::choose
+				<xsl::when(test="not(@to)")
+					<xsl::text:console.error("Missing @to from jsx:bind");
+				<xsl::when(test="not(@from)")
+					<xsl::text:console.error("Missing @from from jsx:bind");
+				<xsl::otherwise
+					# TODO: We might want to warn about undefined cells
+					<xsl::value-of(select=@to)
+					<xsl::choose
+						<xsl::when(test=@fuse)
+							<xsl::text:.>
+							<xsl::value-of(select=$prefix)
+							<xsl::text:fuse(>
+						<xsl::otherwise
+							<xsl::text:.>
+							<xsl::value-of(select=$prefix)
+							<xsl::text:proxy(>
+					<xsl::value-of(select=@from)
+					<xsl::text:);>
+		<xsl::text:&#x000a;&#x0009;}}>
+
+	<xsl::template(name=delta-jsx-component-instanciate-option)
+		# A helper function that can be applied to a <jsx:option> or
+		# to the attributes of a <jsx:component>. The function
+		# extracts the option value and populates it in the options
+		# map. The `o_changed` value is also set to `true`.
+		<xsl::param(name=select,select=@select)
+		<xsl::param(name=as,select=@as)
+		<xsl::param(name=default,select=@default)
+		<xsl::param(name=name,select=@name)
+		<xsl::param(name=value,select=.)
+		<xsl::param(name=oid,select="'o'+generate-id()")
+		<xsl::text:&#x000A;&#x0009;>
+		# FIXME: There's one issue where the component is loaded
+		# and the options change before the component is instanciated. It
+		# will use the previous options. It would be best to re-exrtract the
+		# options at the time of instanciation.
+		<xsl::choose
+			<xsl::when(test="string-length(normalize-space($select))!=0")
+				<xsl::call-template(name=value-extractor)
+					<xsl::with-param(name=select)
+						<xsl::value-of(select=$select)
+					<xsl::with-param(name=as)
+						<xsl::value-of(select=$as)
+					<xsl::with-param(name=default)
+						<xsl::value-of(select=$default)
+				<xsl::call-template(name=value-assign)
+					<xsl::with-param(name=body)
+						<xsl::value-of(select="$oid")
+						<xsl::text:[">
+						<xsl::value-of(select="normalize-space($name)")
+						<xsl::text:"] = _v;o_changed=true;>
+			<xsl::otherwise
+				# If there's no @select, we display the value as-is
+				<xsl::text:_v=(>
+				<xsl::choose
+					<xsl::when(test="string-length(normalize-space($value))!=0")
+						<xsl::value-of(select="normalize-space($value)")
+					<xsl::otherwise
+						<xsl::text:_d>
+				<xsl::text:);if(_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:=*"] != _v){_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:=*"]=>
+				<xsl::value-of(select="$oid")
+				<xsl::text:[">
+				<xsl::value-of(select="normalize-space($name)")
+				<xsl::text:"] = _v;o_changed=true;}>
+
+	<xsl::template(name=delta-jsx-component-instanciate-options)
+		# A helper function that can be applied to a <jsx:options(select=…)>
+		<xsl::param(name=select,select=@select)
+		<xsl::param(name=oid,select="'o'+generate-id()")
+		<xsl::text:&#x000A;&#x0009;>
+		# FIXME: There's one issue where the component is loaded
+		# and the options change before the component is instanciated. It
+		# will use the previous options. It would be best to re-exrtract the
+		# options at the time of instanciation.
+		<xsl::choose
+			<xsl::when(test="string-length(normalize-space($select))!=0")
+				<xsl::call-template(name=value-extractor)
+					<xsl::with-param(name=select)
+						<xsl::value-of(select=$select)
+				<xsl::call-template(name=value-assign)
+					<xsl::with-param(name=body)
+						# NOTE: This does not work in Android WebView or IE
+						<xsl::text:Object.assign(>
+						<xsl::value-of(select="$oid")
+						<xsl::text:,_v);o_changed=true;>
+			<xsl::otherwise
+				# If there's no @select, we display the value as-is
+				<xsl::text:_v=(>
+				<xsl::choose
+					<xsl::when(test="string-length(normalize-space($value))!=0")
+						<xsl::value-of(select="normalize-space($value)")
+					<xsl::otherwise
+						<xsl::text:_d>
+				<xsl::text:);if(_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:=*"] != _v){_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:=*"]=_v;Object.assign(>
+				<xsl::value-of(select="$oid")
+				# NOTE: This does not work in Android WebView or IE
+				<xsl::text:,_v);o_changed=true;}>
+
+	# Creates the component node. The component children
+	# will be stored in the `_m["<nodeid>*"]` entry.
+	<xsl::template(name=delta-jsx-component-create)
+		<xsl::call-template(name=helper-root-declare)
+		<xsl::text:_ct(">
+		<xsl::value-of(select="name()")
+		<xsl::text::>
+		<xsl::value-of(select="@type")
+		<xsl::text:#>
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:");>
+		# We can't mount inside a `<jsx:` node, as it's going to be dynamic.
+		<xsl::if(test="substring-before(name(..),':')!='jsx'")
+			<xsl::call-template(name=helper-root-mount)
+		<xsl::call-template(name=helper-root-map)
+		<xsl::for-each(select="./*|./text()[normalize-space(.)!='']")
+			<xsl::call-template(name=helper-create-root)
+				<xsl::with-param(name=mount,select='0')
+		# NOTE: This is where the ROOT NODES are listed and bound
+		<xsl::call-template(name=delta-jsx-component-create-content)
+		<xsl::for-each(select=jsx:child)
+			<xsl::call-template(name=delta-jsx-component-create-content)
+
+	<xsl::template(name=delta-jsx-component-create-content)
+		<xsl::text:&#x000A;&#x0009;_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:*"]=[>
+		<xsl::for-each(select="(./*|./text()[normalize-space(.)!=''])[not(self::jsx:option or self::jsx:options or self::jsx:bind or self::jsx:transition or self::jsx:child)]")
+			<xsl::text:n_>
+			<xsl::value-of(select="generate-id()")
+			<xsl::if(test="position()!=last()")
+				<xsl::text:, >
+		<xsl::text:];>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::children>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-children)
+		<xsl::call-template(name=comment-tag)
+		# NOTE: We make sure that the children are mounted on their parent. This
+		# might not be the case if the jsx::children tag is present in many
+		# branches of a conditional.
+		# NOTE: This is is disabled for now as it needs to
+		# 1) Make sure the parent is always present
+		# 2) Mount the children in a VNode, as otherwise the children
+		#    will be out of order:
+		#
+		# ```
+		# HELLO
+		# <jsx::children
+		# WORLD
+		# ```
+		<xsl::variable(name=child)
+			<xsl::choose
+				<xsl::when(test=@name)
+					<xsl::value-of(select=@name)
+				<xsl::otherwise
+					<xsl::text:_>
+		<xsl::text:&#x000A;&#x0009;if (_c._children &amp;&amp; _c._children[">
+		<xsl::value-of(select="$child")
+		<xsl::text:"]) {mount(_c._children[">
+		<xsl::value-of(select="$child")
+		<xsl::text:"], _m[">
+		<xsl::value-of(select="generate-id(parent::*[1])")
+		<xsl::text:"],null,_c,_m);}>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::default>
+	#
+	# -------------------------------------------------------------------------
+	# the JSX default tag defines a default value. It can be used as a 
+	# standalone element or an @jsx:default attribute.
+	<xsl::template(name=delta-jsx-default)
+		<xsl::param(name=target)
+			<xsl::choose
+				<xsl::when(test=@select)
+					<xsl::value-of(select=@select)
+				<xsl::otherwise
+					<xsl::text:_>
+		<xsl::param(name=subtarget)
+		<xsl::param(name=value,select=.)
+		<xsl::call-template(name=comment-tag)
+		<xsl::text:&#x000A;&#x0009;if(!>
+		<xsl::value-of(select=$target)
+		<xsl::text:){>
+		<xsl::if(test=$subtarget)
+			<xsl::value-of(select=$subtarget)
+			<xsl::text:=>
+		<xsl::value-of(select=$target)
+		<xsl::text:=(>
+		<xsl::call-template(name=string-template-quoted)
+			<xsl::with-param(name=text,select="$value")
+		<xsl::text:);}>
+
+	# -------------------------------------------------------------------------
+	#
+	# <jsx::log>
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=delta-jsx-log)
+		<xsl::if(test="normalize-space(.)")
+			<xsl::call-template(name=comment-tag)
+			<xsl::call-template(name=value-extractor)
+			<xsl::text:&#x000A;&#x0009;_=data=_r;console.log(>
+			<xsl::value-of(select="normalize-space(.)")
+			<xsl::text:);>
+
+	# -------------------------------------------------------------------------
+	#
+	# NODE HELPERS
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=helper-jsx-direct)
+	# Retrives a reference to the current node from the mapping, extracts
+	# the data value using `select`, binding it to the alias `as` if provided,
+	# then calls `value-assign` with the given `body`.
+	#
+	# - @param body
+	# - @param select
+	# - @param as
+		<xsl::param(name=body)
+		<xsl::param(name=select)
+			<xsl::value-of(select=@select)
+		<xsl::param(name=as)
+			<xsl::value-of(select=@as)
+		<xsl::param(name=default)
+			<xsl::value-of(select=@default)
+		<xsl::param(name=value)
+		<xsl::call-template(name=comment-tag)
+		<xsl::call-template(name=value-extractor)
+			<xsl::with-param(name=select)
+				<xsl::value-of(select=$select)
+			<xsl::with-param(name=as)
+				<xsl::value-of(select=$as)
+			<xsl::with-param(name=value)
+				<xsl::value-of(select=$value)
+			<xsl::with-param(name=default)
+				<xsl::value-of(select=$default)
+		# We retrieve the current node from the mapping
+		<xsl::text:_n=_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:"];>
+		<xsl::call-template(name=value-assign)
+			<xsl::with-param(name=value)
+				<xsl::value-of(select=$value)
+			<xsl::with-param(name=body)
+				<xsl::value-of(select=$body)
+
+	<xsl::template(name=helper-jsx-transition)
+		<xsl::variable(name=tname,select="@transition")
+		<xsl::call-template(name=helper-jsx-direct)
+			<xsl::with-param(name=body)
+				<xsl::text:transition_>
+				<xsl::value-of(select="generate-id(//jsx:transition[@name=$tname])")
+				# The first argument is the key used to store the transition in
+				# the mapping.
+				<xsl::text:(">
+				<xsl::value-of(select="$tname")
+				<xsl::text:_>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:",_,_i,_n,_c,_m,effector_>
+				<xsl::call-template(name=string-safekey)
+					<xsl::with-param(name=text,select=@transition)
+				<xsl::text:_>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:);>
+
+	# -------------------------------------------------------------------------
+	#
+	# CREATE PHASE
+	#
+	# -------------------------------------------------------------------------
+	# OK, so this requires some high-level explanation: composite elements
+	# have a CREATE phase that creates the nodes, bind them to the `mapping`
+	# when they need to be referenced for later, and returns a list of root
+	# nodes to be mounted. Only the composite nodes need to be created, the
+	# other ones (like jsx:value, jsx:html, etc) will modified nodes 
+	# created here.
+	
+	<xsl::template(name=helper-create)
+		# Declares the function that creates the nodes to be added to the DOM
+		<xsl::param(name=name,select="generate-id()")
+		<xsl::text:function create_>
+		<xsl::value-of(select="$name")
+		# Here we have:
+		# - `_d` → data
+		# - `_i` → index
+		# - `_n` → node
+		# - `_c` → context
+		# - `_m` → mapping
+		<xsl::text:(_d,_i,_n,_c,_m){>
+		# This creates the root nodes
+		<xsl::call-template(name=helper-create-roots)
+			<xsl::with-param(name=bind,select="1")
+			<xsl::with-param(name=rootid)
+				<xsl::value-of(select="generate-id(.)")
+		# DEBUG: Uncomment this to log creations
+		# <xsl::text:console.log("Create >
+		# <xsl::value-of(select="generate-id(.)")
+		# <xsl::text:");>
+		# NOTE: Using static allocation here saves valueable time.
+		<xsl::text:&#x000A;&#x0009;const _r = [>
+		<xsl::variable(name=rootid)
+			<xsl::value-of(select="generate-id(.)")
+		<xsl::choose
+			<xsl::when(test="self::*[@jsx:map or @jsx:html]")
+				# The @jsx:map's root is itself, not its children. We don't
+				# output the root if there is no
+					<xsl::text:n_>
+					<xsl::value-of(select="$rootid")
+					<xsl::text:/* @jsxml:map or @jsx:html single root */>
+			<xsl::otherwise
+				# FIXME: We might not want to strip all the empty text nodes.
+				<xsl::for-each(select="(./.|./*|(./text()[normalize-space(.)!='']))")
+					# We don't include the root node in the list, and exclude 
+					# the jsx::elif and jsx::else as they'll be bound to the jsx::if
+					# We also don't include
+					# - jsx:option
+					# - jsx:default
+					# - jsx:template
+					# - jsx:import
+					<xsl::if(test="generate-id(.)!=$rootid and not (self::jsx:elif or self::jsx:else or self::jsx:transition or self::jsx:option or self::jsx:options or self::jsx:import or self::jsx:default or self::jsx:template or self::jsx:argument)")
+						# We filter out empty text nodes
+						<xsl::call-template(name=helper-create-bind-root)
+						<xsl::if(test="position()!=last()")
+							<xsl::text:,>
+		<xsl::text:&#x000A;&#x0009;];>
+		<xsl::text:&#x000A;&#x0009;return _r;&#x000A;}>
+
+	<xsl::template(name=helper-create-bind-root)
+		# Returns the local node reference variable used as the root node
+		# for the given element.
+		<xsl::text:&#x000A;&#x0009;n_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::choose
+			# As @jsx:map nodes are only created when data is applied, we
+			# use the anchor node instead, which is a comment holding all
+			<xsl::when(test="@jsx:map")
+				<xsl::text:_anchor>
+
+	<xsl::template(name=helper-create-roots)
+		<xsl::param(name=rootid)
+		<xsl::param(name=bind,select=1)
+		<xsl::variable(name=current)
+		# We create a root for the current node, but make sure that
+		# we don't mount it (because the parent is out of scope)
+		<xsl::call-template(name=helper-create-root)
+			<xsl::with-param(name=mount,select=0)
+			<xsl::with-param(name=rootid,select=$rootid)
+			<xsl::with-param(name=bind,select=$bind)
+		# However, we will mount every child of the current element.
+		<xsl::for-each(select="./*|./text()[normalize-space(.)!='']")
+			<xsl::call-template(name=helper-create-root)
+
+	<xsl::template(name=helper-create-root)
+		# Creates a DOM node correponding to the current context node and
+		# adds any child node to it.
+		#
+		# - `rootid `the node id of the root node (used to mount the node)
+		# - `mount=1` tells wether then node should be mounted or not
+		# - `bind=1` tells wether the node (if it has a @jsx:ref) should be
+		#   bound to the current compoenent
+		# TODO: Explain what the `mount` parameter does and why we need it
+		<xsl::param(name=mount,select="1")
+		<xsl::param(name=bind,select="1")
+		<xsl::param(name=rootid)
+		<xsl::text:&#x000A;&#x0009;>
+		# NOTE: You'll see that we use `_ct` to create comment nodes, and we'll
+		<xsl::choose
+			<xsl::when(test="parent::jsx:value|parent::jsx:attribute|parent::jsx:html|parent::jsx:style")
+				# NOTE: This should absorb any element that is directly
+				# within a JSXML element that contains code
+				<xsl::text:/*  ><xsl::value-of(select="name()"):><xsl::text:children skipped */>
+			<xsl::when(test="self::jsx:Component")
+				<xsl::text:/* jsx:Component doesn't have a root node */>
+				# NOTE: Left for reference
+				# <xsl::call-template(name=helper-root-declare)
+				# <xsl::text:_nd("template");>
+				# <xsl::call-template(name=helper-root-attributes)
+			# === <jsx:component>
+			<xsl::when(test="self::jsx:component")
+				<xsl::call-template(name=delta-jsx-component-create)
+			# === <jsx:children>
+			<xsl::when(test="self::jsx:children")
+				<xsl::text:&#x000A;&#x0009;/* mounts jsx:children */&#x000A;&#x0009;>
+				# We make sure the children's parent node exists
+				<xsl::text:&#x000A;&#x0009;_m[">
+				<xsl::value-of(select="generate-id(parent::*[1])")
+				<xsl::text:"]=n_>
+				<xsl::value-of(select="generate-id(parent::*[1])")
+				<xsl::text:;>
+				# The we declare the roots and children
+				<xsl::call-template(name=helper-root-declare)
+				<xsl::text:_ct("jsx:children@>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:");>
+				<xsl::call-template(name=helper-root-mount)
+				<xsl::call-template(name=helper-root-map)
+				<xsl::call-template(name=delta-jsx-children)
+			# === <jsx:child>
+			<xsl::when(test="self::jsx:child")
+				<xsl::text:&#x000A;&#x0009;/* jsx:child@>
+				<xsl::value-of(select=@name)
+				<xsl::text: */>
+				<xsl::for-each(select="./*|./text()[.!='']")
+					<xsl::call-template(name=helper-create-root)
+				# We don't do anything, it's done in delta-jsx-component-create
+			# === <jsx:option>
+			<xsl::when(test="self::jsx:option")
+				# We do nothing
+			# === <jsx:options>
+			<xsl::when(test="self::jsx:options")
+				# We do nothing
+			# === <jsx:bind>
+			<xsl::when(test="self::jsx:bind")
+				# We do nothing
+			<xsl::when(test="self::jsx:transition")
+				# We do nothing
+			# === <jsx:template>
+			<xsl::when(test="self::jsx:template")
+				<xsl::text:/* jsx:template doesn't have a root node */>
+				# NOTE: Left for reference
+				# <xsl::call-template(name=helper-root-declare)
+				# <xsl::text:_nd("template");>
+			# === <jsx:apply>
+			<xsl::when(test="self::jsx:apply")
+				<xsl::call-template(name=helper-root-declare)
+				<xsl::text:_ct("jsx:apply=>
+				<xsl::value-of(select=@template)
+				<xsl::text:@>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:");>
+				<xsl::call-template(name=helper-root-mount)
+				<xsl::call-template(name=helper-root-map)
+			# === <jsx:for>
+			<xsl::when(test="self::jsx:for")
+				# We only create a root when the current root is not a jsx::for
+				<xsl::choose
+					<xsl::when(test='$rootid!=generate-id(.)')
+						<xsl::call-template(name=helper-root-declare)
+						<xsl::text:_ct(">
+						<xsl::value-of(select="name()")
+						<xsl::text::>
+						<xsl::value-of(select="@select")
+						<xsl::text:@>
+						<xsl::value-of(select="generate-id()")
+						<xsl::text:");>
+						# FIXME: Not sure why we don't create a root here
+						<xsl::if(test="$mount=1")
+							<xsl::call-template(name=helper-root-mount)
+						<xsl::call-template(name=helper-root-map)
+					<xsl::otherwise
+						<xsl::text:/* jsx:for doesn't have a root node */>
+						# NOTE: Left for reference
+						# <xsl::call-template(name=helper-root-declare)
+						# <xsl::text:_nd("template");>
+						# <xsl::call-template(name=helper-root-attributes)
+			# === <jsx:value>
+			<xsl::when(test="self::jsx:value")
+				<xsl::call-template(name=helper-root-declare)
+				# We create an empty text node to hold the future value.
+				<xsl::text:_tx("");>
+				<xsl::if(test="$mount=1")
+					<xsl::call-template(name=helper-root-mount)
+				<xsl::call-template(name=helper-root-map)
+			# === @jsx:{attribute,style,html}
+			<xsl::when(test="self::jsx:attribute|self::jsx:style|self::jsx:html")
+				<xsl::call-template(name=helper-root-declare)
+				<xsl::text:_ct(">
+				<xsl::value-of(select="name()")
+				<xsl::text:@>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:");>
+				<xsl::if(test="$mount=1")
+					<xsl::call-template(name=helper-root-mount)
+				<xsl::call-template(name=helper-root-map)
+			# === @jsx:{if,elif,else}
+			<xsl::when(test="self::jsx:if|self::jsx:elif|self::jsx:else")
+				# Now every branch defines a template that will
+				# contain the nodes part of the branch
+				<xsl::choose
+					<xsl::when(test="$rootid=generate-id(.)")
+						<xsl::text:/* We don't create the root for conditionals */>
+						<xsl::text:&#x000A;&#x0009;>
+						<xsl::text:const n_>
+						<xsl::value-of(select="generate-id()")
+						<xsl::text:=_m[">
+						<xsl::value-of(select="generate-id()")
+						<xsl::text:"];>
+					<xsl::otherwise
+						<xsl::call-template(name=helper-root-declare)
+						<xsl::text:_ct(">
+						<xsl::value-of(select="name()")
+						<xsl::text:@>
+						<xsl::value-of(select="generate-id()")
+						<xsl::text:");>
+						# We don't create or map the if/elif nodes just
+						# yet. We'll lazily do that on render.
+						<xsl::call-template(name=helper-root-map)
+						<xsl::call-template(name=helper-root-mount)
+				# NOTE: Deprecated
+				# We recurse on the children
+				# <xsl::for-each(select="./*|./text()[normalize-space(.)!='']")
+				# 	<xsl::call-template(name=helper-create-root)
+				# 		<xsl::with-param(name=mount,select="'0'")
+				# 	<xsl::call-template(name=helper-root-map)
+			# TODO: Deprecate
+			# === @jsx:map
+			<xsl::when(test="self::*[@jsx:map]"):
+				<xsl::if(test="$rootid=generate-id(.)")
+					<xsl::call-template(name=helper-root-declare)
+					<xsl::text:_nd(">
+					<xsl::value-of(select="name(.)")
+					<xsl::text:");>
+					<xsl::call-template(name=helper-root-attributes)
+					<xsl::call-template(name=helper-root-map)
+				# We need to create a anchor node that is going to
+				# be used as the root node for the mapping. This ensures
+				# that mapped nodes will be inserted after the anchor,
+				# as opposed to the end of the parent.
+				<xsl::if(test="$rootid!=generate-id(.)")
+					# The anchor node is a comment
+					<xsl::text:&#x000A;&#x0009;>
+					<xsl::text:const n_>
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:_anchor =>
+					<xsl::text:_ct("@jsx:map>
+					<xsl::text:@>
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:");>
+					# We mount the anchor on the parent
+					<xsl::call-template(name=helper-root-mount)
+						<xsl::with-param(name=nid)
+							<xsl::text:n_>
+							<xsl::value-of(select="generate-id(.)")
+							<xsl::text:_anchor>
+					# We bind the anchor node to the <id>@ and alias
+					# it to <id>. However, the <id> node will be overriden
+					# in subsequent mappings.
+					<xsl::text:&#x000A;&#x0009;>
+					<xsl::text:_m[">
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:@"]=>
+					<xsl::text:_m[">
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:"]=n_>
+					<xsl::value-of(select="generate-id(.)")
+					<xsl::text:_anchor;>
+				# NOTE: We don't mount @jsx:map nodes, but we do
+				# make sure their parent is referenced. Here we
+				# use the mount=1 as a guard against a run where
+				# the current node is a template top-level
+				# node.
+				<xsl::if(test="$mount=1")
+					<xsl::for-each(select=parent::*[1])
+						<xsl::call-template(name=helper-root-map)
+			# === <jsx:Component>
+			<xsl::when(test="self::jsx:Component")
+				# We do nothing
+			# === <jsx:default>
+			<xsl::when(test="self::jsx:default")
+				# We do nothing
+			# === <jsx:argument>
+			<xsl::when(test="self::jsx:argument")
+				# We do nothing
+			# === <jsx:option>
+			<xsl::when(test="self::jsx:option")
+			<xsl::when(test="self::jsx:options")
+			<xsl::when(test="self::jsx:bind")
+			<xsl::when(test="self::jsx:log")
+				# We do nothing
+			<xsl::when(test="self::jsx:T")
+				<xsl::call-template(name=helper-root-declare)
+				<xsl::text:_ct(">
+				<xsl::value-of(select="name()")
+				<xsl::text::>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:");>
+				<xsl::if(test="$mount=1")
+					<xsl::call-template(name=helper-root-mount)
+				<xsl::call-template(name=helper-root-map)
+			# === <jsx:*> CUSTOM COMPONENT
+			<xsl::when(test="substring-before(name(),':')='jsx'")
+				<xsl::call-template(name=delta-jsx-component-create)
+			# === TEXT NODE
+			<xsl::when(test="self::text()[string-length(.)!=0]"):
+				<xsl::call-template(name=helper-root-declare)
+				<xsl::text:_tx(>
+				<xsl::call-template(name=string-template-quoted)
+				<xsl::text:);>
+				<xsl::if(test="$mount=1")
+					<xsl::call-template(name=helper-root-mount)
+			# === ANY OTHER NODE
+			<xsl::otherwise:
+				<xsl::call-template(name=helper-root-declare)
+				<xsl::choose
+					<xsl::when(test="string-length(namespace-uri())!=0")
+						<xsl::text:_nsnd(">
+						<xsl::value-of(select="namespace-uri()")
+						<xsl::text:",">
+					<xsl::otherwise
+						<xsl::text:_nd(">
+				<xsl::value-of(select="name(.)")
+				<xsl::text:");>
+				<xsl::call-template(name=helper-root-attributes)
+				<xsl::if(test="$mount=1")
+					<xsl::call-template(name=helper-root-mount)
+				<xsl::if(test="self::*[@jsx:value]")
+					<xsl::call-template(name=helper-root-map)
+				# We recurse on the children
+				<xsl::for-each(select="./*|./text()[.!='']")
+					<xsl::call-template(name=helper-create-root)
+		# === Now, this applies to all the nodes. This takes
+		# care of `@jsx:ref` and `@on:*` attributes. Not that @jsx:map nodes
+		# are excluded unless they are the root.
+		<xsl::if(test="(not(@jsx:map) or $rootid=generate-id(.))")
+			# We need to register the @jsx:ref nodes as they will trigger mount
+			# and unmount events.
+			<xsl::if(test=@jsx:ref|parent::jsx:T)
+				<xsl::text:_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:"] = n_>
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:;>
+			<xsl::for-each(select="@*[substring-before(name(),':')='on']")
+				<xsl::text:&#x000A;&#x0009;/* @>
+				<xsl::value-of(select="name()")
+				<xsl::text:*/>
+				<xsl::text:&#x000A;&#x0009;n_>
+				<xsl::value-of(select="generate-id(parent::*[1])")
+				<xsl::text:.addEventListener(">
+				<xsl::value-of(select="substring-after(name(),':')")
+				<xsl::text:",>
+				<xsl::choose
+					<xsl::when(test="starts-with(normalize-space(.),'action:')")
+						<xsl::text:_c.component ? _c.component.action(">
+						<xsl::value-of(select="substring-after(.,'action:')")
+						<xsl::text:") : undefined>
+					<xsl::when(test="starts-with(normalize-space(.),'do:')")
+						<xsl::text:_c.component ? _c.component.action(">
+						<xsl::value-of(select="substring-after(.,'do:')")
+						<xsl::text:") : undefined>
+					<xsl::when(test=".=''")
+						<xsl::text:_c.component ? _c.component.action(">
+						<xsl::value-of(select="substring-after(name(),':')")
+						<xsl::text:") : undefined>
+					<xsl::when(test="starts-with(normalize-space(.),'{')")
+						<xsl::text:console.error("Inline JavaScript in handlers not supported anymore")
+					<xsl::otherwise
+						<xsl::text:_c.component ? _c.component.action(">
+						<xsl::value-of(select=".")
+						<xsl::text:") : undefined>
+				# NOTE: We don't want to capture events, we want them to bubble up.
+				<xsl::text:, false);>
+
+	# === ROOTS ===============================================================
+
+	<xsl::template(name=helper-root-declare)
+		<xsl::param(name=suffix)
+		<xsl::text:const n_>
+		<xsl::value-of(select="generate-id()")
+		<xsl::value-of(select="$suffix")
+		<xsl::text: = >
+
+	<xsl::template(name=helper-root-attributes)
+		<xsl::variable(name=node)
+			<xsl::text:n_>
+			<xsl::value-of(select="generate-id()")
+		<xsl::for-each(select="@*")
+			<xsl::choose
+				<xsl::when(test="substring-before(name(),':')='jsx'")
+					# We filter out jsx:* attributes
+				<xsl::when(test="substring-before(name(),':')='on'")
+					# We filter out jsx:* attributes
+				<xsl::when(test="string-length(namespace-uri())!=0")
+					<xsl::value-of(select=$node)
+					<xsl::text:.setAttributeNS(">
+					<xsl::value-of(select="namespace-uri()")
+					<xsl::text:", ">
+					<xsl::value-of(select="local-name()")
+					<xsl::text:", >
+					<xsl::call-template(name=string-template-quoted)
+					<xsl::text:);>
+				<xsl::otherwise
+					<xsl::value-of(select=$node)
+					<xsl::text:.setAttribute(">
+					<xsl::value-of(select="local-name()")
+					<xsl::text:", >
+					<xsl::call-template(name=string-template-quoted)
+					<xsl::text:);>
+	
+	<xsl::template(name=helper-root-mount)
+		# Mounts the node into its parent node *if necessary*. Any dynamic
+		# node contained in a conditional or loop does not need to be mounted
+		# as the mounting will be done when the condition/loop is met/exectued.
+		#
+		# However, if a node has a parent that is a VIRTUAL node (ie, a comment
+		# node), then it needs to be registered in its __mount.
+		<xsl::param(name=nid)
+			<xsl::text:n_>
+			<xsl::value-of(select="generate-id(.)")
+		<xsl::choose
+			<xsl::when(test="parent::*[1][self::jsx:if or self::jsx:elif or self::jsx:else]")
+				# We mount these nodes as virtual nodes. Conditionals are always
+				# nested within high-level templates.
+				# <xsl::text:n_>
+				# <xsl::value-of(select="generate-id(parent::*[1])")
+				# <xsl::text:.__mounts.push(>
+				# <xsl::value-of(select="$nid")
+				# <xsl::text:);>
+			# FIXME: When we have a component nested in another dynamic component,
+			# this will fail.
+			<xsl::when(test="parent::*[1][self::jsx:Component or self::jsx:template or self::jsx:for or self::jsx:child]")
+				# Components, templates are all to-levels so they're not nested within
+				# another rule, unlike conditionals.
+			<xsl::otherwise
+				# When the parent is a regular node, there's no problem.
+				<xsl::text:n_>
+				<xsl::value-of(select="generate-id(parent::*[1])")
+				<xsl::text:.appendChild(>
+				<xsl::value-of(select="$nid")
+				<xsl::text:);>
+
+	<xsl::template(name=helper-root-map)
+		# Cretes an entry in the local mapping table `_m` for the given
+		# node. The node will then be referencable by its index.
+		#
+		# jsx:log elements do not create a ny node, and @jsx:map only create
+		# nodes when mapped
+		<xsl::if(test="not(self::jsx:log) and not(@jsx:map)")
+			<xsl::text:_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:"]=n_>
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:;>
+
+	# ------------------------------------------------------------------------------
+	#
+	# UPDATE PHASE
+	#
+	# ------------------------------------------------------------------------------
+	
+	# @internal helper-update-preamble
+	# @param cache:(0|1)=1 -- tells wether the data should be stored in 
+	#        the mapping or not.
+	#
+	# This declares the following variables:
+	#
+	# - `_` for the local extracted data
+	# - `_c` for the local context
+	# - `_n` for the current node
+	# - `_m` for the current mapping
+	# - `_r` for the current result (current extracted data)
+	# - `_ra` indicates if _r has a single or more values (_ra = [R] is [A]rray)
+	# - `_or` for the old result (previous data)
+	# - `_v` for formatted value/result.
+	<xsl::template(name=helper-update-preamble)
+		<xsl::param(name=cache,select=0)
+		<xsl::param(name=name,select="generate-id()")
+		<xsl::text:function update_>
+		<xsl::value-of(select="$name")
+		<xsl::text:(_d,_i,_p,_c,_m){&#x000A;&#x0009;var _=_d; var data=_d;var index=_i; var _k=undefined; var _lm=undefined; var _lc=_c; var _v=undefined; var _r=undefined;var _ra=undefined;var _or=undefined; var _n=_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:"];_m[">
+		<xsl::value-of(select="generate-id(.)")
+		<xsl::text:"]=_n;>
+		<xsl::for-each(select="jsx:default")
+			<xsl::call-template(name=delta-jsx-default)
+				<xsl::with-param(name=target,select="'_d'")
+				<xsl::with-param(name=subtarget,select="'_c.data = data = _'")
+		<xsl::if(test="$cache=1")
+			<xsl::text:var _or = _m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:="];>
+
+	# @internal helper-update-postamble
+	# @param result:String -- the name of the result variable
+	# @param cache:(0|1)=0 -- tells wether the data should be stored in 
+	#        the mapping or not.
+	<xsl::template(name=helper-update-postamble)
+		<xsl::param(name=result)
+			<xsl::text:r>
+		<xsl::param(name=cache,select=0)
+		<xsl::text:&#x000A;&#x0009;>
+		<xsl::if(test="$cache=1 and string-length($result)!=0")
+			<xsl::text:_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:="]=>
+			<xsl::value-of(select="$result")
+			<xsl::text:;>
+		<xsl::text:&#x000A;}>
+
+	# @internal helper-update-fields
+	# Updates the fields declared within this node. This helper is invoked
+	# from within a parent `update_XXX` function.
+	<xsl::template(name=helper-update-fields)
+		<xsl::if(test="@jsx:refkey")
+			<xsl::text:&#x000A;&#x0009;/* ┈┈┈ @jsx:refkey='*/>
+			<xsl::text:&#x000A;&#x0009;>
+			<xsl::text:_ = >
+			<xsl::call-template(name=string-template-quoted)
+				<xsl::with-param(name=text,select="@jsx:refkey")
+			<xsl::text:; _c.component.rebindNode(">
+			<xsl::value-of(select=@jsx:ref)
+			<xsl::text:",_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:"],_,_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:K"]);_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:K"]=_;>
+		<xsl::choose
+			# TODO: Deprecate
+			<xsl::when(test="self::*[@jsx:map]")
+				<xsl::text:&#x000A;&#x0009;/* ┈┈┈ @jsx:map='><xsl::value-of(select=@jsx:map):><xsl::text:*/>
+				<xsl::call-template(name=value-extractor)
+					<xsl::with-param(name=select)
+						<xsl::value-of(select=@jsx:map)
+				# We update using the `@`-suffixed anchor node
+				<xsl::call-template(name="helper-update-multiple")
+					<xsl::with-param(name=nid)
+						<xsl::value-of(select="generate-id(.)"):>
+						<xsl::text:@>
+					<xsl::with-param(name=mid)
+						<xsl::value-of(select="generate-id(parent::*[1])")
+			<xsl::when(test="self::jsx:for")
+				<xsl::call-template(name=comment-tag)
+				<xsl::call-template(name=value-extractor)
+				<xsl::call-template(name="helper-update-multiple")
+			<xsl::when(test="self::jsx:if")
+				<xsl::call-template(name="delta-jsx-conditional-select")
+			<xsl::when(test="self::jsx:elif|self::jsx:else")
+				<xsl::text:/* conditional branches */>
+			<xsl::when(test="self::*[@jsx:value]")
+				<xsl::call-template(name=delta-jsx-value-attribute)
+			<xsl::when(test="self::jsx:T")
+				<xsl::call-template(name=delta-jsx-T)
+			<xsl::when(test="self::jsx:value")
+				<xsl::call-template(name=delta-jsx-value)
+			<xsl::when(test="self::jsx:attribute")
+				<xsl::call-template(name=delta-jsx-attribute)
+			<xsl::when(test="self::jsx:style")
+				<xsl::call-template(name=delta-jsx-style)
+			<xsl::when(test="self::jsx:html")
+				<xsl::call-template(name=delta-jsx-html)
+			<xsl::when(test="self::jsx:apply")
+				<xsl::call-template(name=delta-jsx-apply)
+			<xsl::when(test="self::jsx:log")
+				<xsl::call-template(name=delta-jsx-log)
+			<xsl::when(test="self::jsx:argument")
+			<xsl::when(test="self::jsx:transition")
+			<xsl::when(test="self::jsx:default")
+				# NOTE: I moved this explicitely to the concerned tags
+				# <xsl::call-template(name=delta-jsx-default)
+				# 	<xsl::with-param(name=target,select="'_d'")
+				# 	<xsl::with-param(name=subtarget,select="'_'")
+			<xsl::when(test="self::jsx:component")
+				<xsl::call-template(name=delta-jsx-component-instanciate)
+				<xsl::for-each(select=*)
+					<xsl::call-template(name=helper-update-fields)
+			<xsl::when(test="self::jsx:children")
+				<xsl::call-template(name=delta-jsx-children)
+			<xsl::when(test="self::jsx:child")
+				# We update the contents of the children, otherwise any
+				# dynamic content will be left blank.
+				<xsl::for-each(select=*)
+					<xsl::call-template(name=helper-update-fields)
+			<xsl::when(test="self::jsx:import")
+				<xsl::text:/* jsx:import >
+				<xsl::if(test=@component)
+					<xsl::text: component='><xsl:value-of(select=@component):><xsl::text:'>
+				<xsl::if(test=@name)
+					<xsl::text: name='><xsl:value-of(select=@name):><xsl::text:'>
+				<xsl::if(test=@from)
+					<xsl::text: from='><xsl:value-of(select=@from):><xsl::text:'>
+				<xsl::if(test=@as)
+					<xsl::text: as='><xsl:value-of(select=@as):><xsl::text:'>
+				<xsl::text:' value='>
+				<xsl::value-of(select=@value)
+				<xsl::text:' */>
+			<xsl::when(test="self::jsx:option")
+				<xsl::text:&#x000A;&#x0009;/* ┈┈┈ jsx:option name='>
+				<xsl::value-of(select=@name)
+				<xsl::text:' value='>
+				<xsl::value-of(select=@value)
+				<xsl::text:' */>
+			<xsl::when(test="self::jsx:options")
+				<xsl::text:&#x000A;&#x0009;/* ┈┈┈ jsx:option select='>
+				<xsl::text:' select='>
+				<xsl::value-of(select=@select)
+				<xsl::text:' */>
+			<xsl::when(test="self::jsx:bind")
+				<xsl::text:&#x000A;&#x0009;/* ┈┈┈ jsx:bind from='>
+				<xsl::value-of(select=@from)
+				<xsl::text:' to='>
+				<xsl::value-of(select=@to)
+				<xsl::text:' */>
+			<xsl::when(test="self::jsx:template")
+				<xsl::text:&#x000A;&#x0009;/* ┈┈┈ jsx:template='><xsl::value-of(select=@name):><xsl::text:*/>
+			<xsl::when(test="self::jsx:Component")
+				<xsl::for-each(select=*)
+					<xsl::call-template(name=helper-update-fields)
+			<xsl::when(test="substring-before(name(),':')='jsx'")
+				<xsl::call-template(name=delta-jsx-component-instanciate)
+					<xsl::with-param(name=classname,select="substring-after(name(),':')")
+				<xsl::for-each(select=*)
+					<xsl::call-template(name=helper-update-fields)
+			<xsl::otherwise
+				<xsl::for-each(select=*)
+					<xsl::call-template(name=helper-update-fields)
+
+	# @internal helper-update-multiple
+	# Creates the bit of code that passes create/update functions
+	# to the `multiple` rendering combinator. 
+	<xsl::template(name=helper-update-multiple)
+		<xsl::param(name=rid)
+			<xsl::value-of(select="generate-id()")
+		<xsl::param(name=mid)
+			<xsl::value-of(select="generate-id()")
+		<xsl::param(name=nid)
+			<xsl::value-of(select="generate-id()")
+		<xsl::param(name=extractor)
+			<xsl::value-of(select="@jsx:extractor")
+		<xsl::param(name=comparator)
+			<xsl::value-of(select="@jsx:comparator")
+		# We define the `_k` key that will be used to store
+		# the extracted item in the context.
+		<xsl::choose
+			<xsl::when(test=@jsx:as|@as)
+				<xsl::text:_k=">
+				<xsl::value-of(select="normalize-space(@jsx:as|@as)")
+				<xsl::text:";>
+			<xsl::otherwise
+				<xsl::text:_k="_";>
+		# FIXME: This should probably be bound to the context _c
+		# Now we define a sub-mapping to store the mapped nodes.
+		<xsl::text:_n=_m[">
+		<xsl::value-of(select="$nid")
+		<xsl::text:"];_lm=_m[">
+		<xsl::value-of(select="$mid")
+		<xsl::text:+"]=_m[">
+		<xsl::value-of(select="$mid")
+		<xsl::text:+"] || {};>
+		# And we pass the create/update  to the multiple combinator
+		<xsl::text:&#x000A;&#x0009;multiple(_c.component,_r,_k,_n,_lc,_lm,create_>
+		<xsl::value-of(select="$rid")
+		<xsl::text:,update_>
+		<xsl::value-of(select="$rid")
+		<xsl::text:,remove_>
+		<xsl::value-of(select="$rid")
+		<xsl::text:,mount_>
+		<xsl::value-of(select="$rid")
+		<xsl::text:,unmount_>
+		<xsl::value-of(select="$rid")
+		<xsl::text:,mount,unmount,>
+		<xsl::choose
+			<xsl::when(test="string-length(normalize-space($extractor))!=0")
+				<xsl::text:function(d,i){var _=d;return (>
+				<xsl::value-of(select="$extractor")
+				<xsl::text:);},>
+			<xsl::otherwise
+				<xsl::text:undefined,>
+		<xsl::choose
+			<xsl::when(test="string-length(normalize-space($comparator))!=0")
+				<xsl::text:function(a,b){return (>
+				<xsl::value-of(select="$comparator")
+				<xsl::text:);},>
+			<xsl::otherwise
+				<xsl::text:undefined>
+		<xsl::text:);>
+
+	# -------------------------------------------------------------------------
+	#
+	# REMOVE PHASE
+	#
+	# -------------------------------------------------------------------------
+
+	<xsl::template(name=helper-remove)
+		# Declares the function that creates the nodes to be added to the DOM
+		<xsl::param(name=name,select="generate-id()")
+		<xsl::text:function remove_>
+		<xsl::value-of(select="$name")
+		<xsl::text:(_n,_p,_c,_m){>
+		# TODO: Implement me
+		<xsl::text:}>
+
+	# -------------------------------------------------------------------------
+	#
+	# MOUNT/UNMOUNT HELPERS
+	#
+	# -------------------------------------------------------------------------
+	# These helpers produce the mount/unmount functions/callbacks used
+	# by the view.
+
+	<xsl::template(name=helper-mount)
+		<xsl::param(name=name,select="generate-id()")
+		<xsl::call-template(name=helper-mount-unmount)
+			<xsl::with-param(name=name,select="$name")
+			<xsl::with-param(name=operation)
+				<xsl::text:mount>
+
+	<xsl::template(name=helper-unmount)
+		<xsl::param(name=name,select="generate-id()")
+		<xsl::call-template(name=helper-mount-unmount)
+			<xsl::with-param(name=name,select="$name")
+			<xsl::with-param(name=operation)
+				<xsl::text:unmount>
+
+	<xsl::template(name=helper-mount-unmount)
+		# Declares the function that creates the nodes to be added to the DOM
+		<xsl::param(name=name,select="generate-id()")
+		<xsl::param(name=operation)
+			<xsl::text:mount>
+		<xsl::variable(name=ref)
+			<xsl::call-template(name=helper-mount-unmount__recurse)
+				<xsl::with-param(name=operation,select="$operation")
+				<xsl::with-param(name=rootid,select="generate-id(.)")
+		<xsl::choose
+			# The mount/unmount will return the delay after which the operation
+			# unmount operation can happen.
+			<xsl::when(test="string-length(normalize-space($ref))!=0 or self::jsx:if or self::jsx:elif or self::jsx:else")
+				<xsl::text:function >
+				<xsl::value-of(select="$operation")
+				<xsl::text:_>
+				<xsl::value-of(select="$name")
+				<xsl::text:(_d,_i,_n,_c,_m){var c=undefined;var t=[];>
+				<xsl::value-of(select=$ref)
+				<xsl::choose
+					# If we're unmounting, we need to call the unmounter
+					# with the potential list of transitions, so that we 
+					# know when to unmount.
+					<xsl::when(test="$operation='unmount'")
+						<xsl::text:;return _c.unmounter(t);}>
+					<xsl::otherwise
+						<xsl::text:;}>
+			<xsl::otherwise
+				<xsl::text:const >
+				<xsl::value-of(select="$operation")
+				<xsl::text:_>
+				<xsl::value-of(select="$name")
+				<xsl::text:=function(){};>
+
+	# TODO: Honestly, this @jsx::map like the @jsx::value is a mistake. It
+	# creates many complicated use cases for no benefit.
+	# --
+	# We take care of references. Any node with a `@jsx:ref` needs
+	# to be bound to the component. However, special nodes like `@jsx:map`
+	# should only be bound to the component when they are the root node, ie. 
+	# when they are not a child call of the `helper-create-root` template.
+	#
+	# If we don't do this, then in the following use case:
+	#
+	# ```
+	#	<ul(jsx::map="rows")
+	#		<li(jsx::map="_",jsx::ref="cell")
+	# ```
+	#
+	# The `create_<ul>` function will bind the `cell` node to the `<li>`
+	# template node -- which we don't want to do because this node
+	# will never be inserted.
+	# TODO: Correct indentation
+	<xsl::template(name=helper-mount-unmount__recurse)
+		<xsl::param(name=rootid)
+		<xsl::param(name=operation)
+			<xsl::text:mount>
+		# This extracts all the direct nodes of any sub-component
+		# FIXME: There is one caveat here which is that if the component is loading
+		# and the condition is false, then the component will still display. One
+		# way to do that is to make sure we flag the component as should not mount.
+		# food for thought.
+		<xsl::variable(name=localname,select='local-name()')
+		# If the current node is a jsx: node and it is either jsx::component
+		# or has a corresponding imported component, then we apply the
+		# mount/unmount operation to the component
+		<xsl::if(test="self::jsx:* and (count(/jsx:Component/jsx:import[@as=$localname])!=0 or $localname='component')")
+			# We don't mount/unmount detached components, as they're going
+			# to be managed by others
+			# Update: 2019-03-06, components mounted under template are automatically detached
+			<xsl::if(test="not(@jsx:detached or local-name(..)='template')")
+				<xsl::text:&#x000A;&#x0009;&#x0009;&#x0009;&#x0009;/*>
+				<xsl::value-of(select="name()")
+				<xsl::text: */c=_m[">
+				<xsl::value-of(select="generate-id()")
+				# For async components, c is going to be `true`.
+				<xsl::text:^C"];if(c &amp;&amp; c.component !== true){>
+				<xsl::value-of(select="$operation")
+				<xsl::text:Child(_c.component,c.component,_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:"])}>
+		# If the node has a @jsx:ref attribute, then we bind/unbind it, but
+		# we only bind nodes for non-jsx nodes, as otherwise they're going
+		# to be dynamic (components or templates).
+		<xsl::if(test="@jsx:ref and not(self::jsx:*)")
+			<xsl::text:var _=_d;>
+			<xsl::text:_c.component.>
+			<xsl::choose
+				<xsl::when(test="$operation='mount'")
+					<xsl::text:bindNode>
+				<xsl::otherwise
+					<xsl::text:unbindNode>
+			<xsl::text:(">
+			<xsl::value-of(select="@jsx:ref")
+			<xsl::text:", _m[">
+			<xsl::value-of(select="generate-id()")
+			<xsl::text:"],>
+			<xsl::choose
+				<xsl::when(test=@jsx:refkey)
+					<xsl::call-template(name=string-template-quoted)
+						<xsl::with-param(name=text,select="@jsx:refkey")
+				<xsl::otherwise
+					<xsl::text:_i>
+			<xsl::text:);>
+		# NOTE: We need to mount the branches of if..elif..else. This is not
+		# necessary for `for` as the render function does the mounting.
+		<xsl::if(test="self::jsx:if or self::jsx:elif or self::jsx:else")
+			<xsl::value-of(select="$operation")
+			<xsl::text:(_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:*"],_m[">
+			<xsl::value-of(select="generate-id(.)")
+			<xsl::text:.."],null,_c,_m);>
+		# We look for any JSX directive that might have transition, which
+		# is value/style/attribute, and look if the transition has a from/to
+		# attribute. If so, this means that we do have a MOUNT or UNMOUNT 
+		# transition, which we need to execute.
+		#
+		# The `transitions` variable holds the array of executed transitions
+		# and will hold the time at which the transition ends.
+		<xsl::variable(name="transitions")
+			<xsl::for-each(select="jsx:style/@transition|jsx:value/@transition|jsx:attribute/@transition")
+				<xsl::variable(name="transition")
+					<xsl::call-template(name=string-safekey)
+						<xsl::with-param(name=text,select=".")
+				<xsl::variable(name="scope")
+					<xsl::call-template(name=string-safekey)
+						<xsl::with-param(name=text,select=".")
+					<xsl::text:_>
+					<xsl::value-of(select="generate-id(..)")
+				# NOTE: Here we need to reuse the previous value of the node, which will
+				# be undefined if it's never been used.
+				<xsl::variable(name=arguments)
+					<xsl::text:">
+					<xsl::value-of(select="$scope")
+					<xsl::text:", _m[">
+					<xsl::value-of(select="generate-id(..)")
+					<xsl::text:="],_i,_m[">
+					<xsl::value-of(select="generate-id(..)")
+					<xsl::text:"],_c,_m,effector_>
+					<xsl::value-of(select="$scope")
+				<xsl::for-each(select="/jsx:Component/jsx:transition[@name=$transition]")
+					<xsl::choose
+						<xsl::when(test="$operation='mount'")
+							<xsl::if(test="@from|jsx:from")
+								<xsl::text:transition_>
+								<xsl::value-of(select="generate-id(.)")
+								<xsl::text:(>
+								<xsl::value-of(select="$arguments")
+								<xsl::text:,1);>
+						<xsl::otherwise
+							<xsl::if(test="@to|jsx:to")
+								<xsl::text:transition_>
+								<xsl::value-of(select="generate-id(.)")
+								<xsl::text:(>
+								<xsl::value-of(select="$arguments")
+								<xsl::text:,-1),>
+		<xsl::if(test="string-length($transitions)!=0")
+			# Now, if we have transition, we want to execute it on mount,
+			# but when unmounting we want to get the last transition
+			# and unmount once it is finished.
+			<xsl::choose
+				<xsl::when(test="$operation='mount'")
+					<xsl::value-of(select="$transitions")
+				<xsl::otherwise
+					<xsl::text:t=t.concat([>
+					<xsl::value-of(select="$transitions")
+					<xsl::text:null]);>
+
+		# We recurse on the nodes, but stop for conditional and loops as they
+		# are dynamically managed.
+		<xsl::for-each(select="*")
+			<xsl::choose
+				# Here we don't want to recurse on these jsx tags as they're all
+				# dynamic: if/elif/else are mounted based on the state, and 
+				# maps/for are going to be mounted based on the data data.
+				<xsl::when(test="self::jsx:if or self::jsx:elif or self::jsx:else or self::jsx:for")
+				# For all the rest, we can proceed.
+				<xsl::otherwise
+					<xsl::call-template(name=helper-mount-unmount__recurse)
+						<xsl::with-param(name=rootid,select="$rootid or generate-id(.)")
+						<xsl::with-param(name=operation,select="$operation")
+
+	# -------------------------------------------------------------------------
+	#
+	# VALUE OPERATIONS
+	#
+	# -------------------------------------------------------------------------
+
+	# @internal value-extractor
+	# Extracts the value from @select @as and does the following:
+	# - Create a new `_lc` (local context) derived from the current context
+	#   with the bound data.
+	# - Bind `_r` to the `@select`'ed part of the data. The `_r` referes to
+	#   the current result/data.
+	<xsl::template(name=value-extractor)
+		# Expects value=. select=@select as=@as and will
+		# extract the value and store it in the context's slots.
+		<xsl::param(name=select)
+			<xsl::value-of(select=@select)
+		<xsl::param(name=as)
+			<xsl::value-of(select=@as)
+		<xsl::param(name=default)
+			<xsl::value-of(select=@default)
+		<xsl::param(name=cache)
+			<xsl::text:1>
+		<xsl::param(name=selectn)
+			<xsl::value-of(select='normalize-space($select)')
+			# NOTE: Before 2019-06-01, we were adding data.locale to the
+			# jsx::T, but it's not a good strategy.
+		<xsl::param(name=asn)
+			<xsl::value-of(select='normalize-space($as)')
+		<xsl::param(name=indent)
+			<xsl::text:&#x000A;&#x0009;>
+		# 1) We bind the @selected value to `_r`
+		# NOTE: Selectors now support '+' to combine multiple declarations
+		<xsl::value-of(select=indent)
+		<xsl::text:_lc=_c;_=_d;_r=>
+		<xsl::call-template(name=value-extractor__select)
+			<xsl::with-param(name=selector,select=$selectn)
+		# _ra means the result is an array
+		<xsl::text:;_ra=>
+		<xsl::choose
+			<xsl::when(test="contains($selectn,'+')")
+				<xsl::text:true;>
+			<xsl::otherwise
+				<xsl::text:false;>
+		# 1.1) We apply the default if it exists
+		<xsl::if(test="string-length(normalize-space($default))!=0")
+			<xsl::call-template(name=delta-jsx-default)
+				<xsl::with-param(name=target,select="'_r'")
+				<xsl::with-param(name=value,select=$default)
+		# 2) We create a derived context if we have @as defined
+		<xsl::if(test="string-length($asn)!=0")
+			<xsl::text:&#x000A;  >
+			<xsl::text:_lc=Object.create(_c);_lc.>
+			<xsl::value-of(select=$asn)
+			<xsl::text:=_r; var >
+			<xsl::value-of(select=$asn)
+			<xsl::text:=_r;>
+		# 3) We retrieve the previous value from the cache
+		<xsl::choose
+			<xsl::when(test="$cache='1'")
+				<xsl::text:_or=_m[">
+				<xsl::value-of(select="generate-id()")
+				<xsl::text:="];>
+			<xsl::otherwise
+				<xsl::text:_or=undefined;>
+
+	<xsl::template(name=value-extractor__select)
+		# Returns a comma-separated list of expression that extract the data
+		# from the given selector
+		<xsl::param(name=selector)
+		<xsl::param(name=depth,select="'0'")
+		<xsl::choose
+			<xsl::when(test="$depth!='+'")
+				<xsl::choose
+					<xsl::when(test="contains($selector,'+')")
+						<xsl::text:[>
+						<xsl::call-template(name=value-extractor__select)
+							<xsl::with-param(name=selector,select=$selector)
+							<xsl::with-param(name=depth,select="'+'")
+						<xsl::text:]>
+					<xsl::when(test="string-length($selector)!=0")
+						<xsl::call-template(name=value-extractor__select)
+							<xsl::with-param(name=selector,select=$selector)
+							<xsl::with-param(name=depth,select="'+'")
+					<xsl::otherwise
+						<xsl::text:_d>
+			<xsl::otherwise
+				<xsl::variable(name=head)
+					<xsl::choose
+						<xsl::when(test="contains($selector,'+')")
+							<xsl::value-of(select="normalize-space(substring-before($selector,'+'))")
+						<xsl::otherwise
+							<xsl::value-of(select="normalize-space($selector)")
+				<xsl::variable(name=tail)
+					<xsl::value-of(select="normalize-space(substring-after($selector,'+'))")
+				<xsl::if(test="$head != ''")
+					<xsl::if(test="$head != '_' and not(starts-with($head,'_.'))")
+						<xsl::text:_c.>
+					<xsl::call-template(name=selector-format)
+						<xsl::with-param(name=selector,select=$head)
+						<xsl::with-param(name=index,select=0)
+				<xsl::if(test="$tail != ''")
+					<xsl::if(test="$head != ''")
+						<xsl::text:, >
+					<xsl::call-template(name=value-extractor__select)
+						<xsl::with-param(name=selector,select="$tail")
+						<xsl::with-param(name=depth,select="'+'")
+
+	<xsl::template(name=value-formatter)
+		<xsl::param(name=formatter)
+			<xsl::call-template(name=value-formatter__helper)
+		<xsl::text:_v=>
+		<xsl::choose
+			<xsl::when(test="string-length(normalize-space($formatter))!=0")
+				<xsl::value-of(select="normalize-space($formatter)")
+				<xsl::text:;>
+			<xsl::otherwise
+				<xsl::text:_r;>
+	
+	<xsl::template(name=value-formatter__helper)
+	## Returns a JavaScript string representing the expression that
+	## creates the value. This detects the presence of nested jsx::T
+	## and expands them into a `_c.component.translate(null,v,data.locale)` 
+	## expression.
+		<xsl::choose
+			<xsl::when(test="self::text()")
+				<xsl::value-of(select=".")
+			<xsl::when(test="self::jsx:T")
+				<xsl::text:(function(_r){var _=_r[0];return _c.component.translate(null,>
+				<xsl::choose
+					<xsl::when(test="@select")
+						<xsl::text:console.error("Unsupported @select in jsx:T:>
+						<xsl::value-of(select=@select)
+						<xsl::text:")
+					<xsl::when(test="string-length(normalize-space(.))!=0")
+						<xsl::call-template(name="string-template-quoted")
+					<xsl::otherwise
+						<xsl::text:_>
+				<xsl::text:,_r[_r.length-1])}(_r))>
+			<xsl::otherwise
+				<xsl::for-each(select="*|text()")
+					<xsl::call-template(name=value-formatter__helper)
+
+	<xsl::template(name=value-cache)
+		<xsl::text:_m[">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:="]=_r;>
+
+	<xsl::template(name=value-assign)
+	# - @param body?
+	# - @param formatter?
+	# - @param always?
+	# - @param value?
+		<xsl::param(name=body)
+		<xsl::param(name=formatter)
+			<xsl::call-template(name=value-formatter__helper)
+		<xsl::param(name=always)
+			<xsl::if(test="@always|@jsx:always")
+				<xsl::text:true>
+		<xsl::param(name=value)
+			<xsl::text:>
+		<xsl::text:&#x000A;&#x0009;>
+		<xsl::text:&#x000A;&#x0009;>
+		<xsl::if(test="$always!='true'")
+			<xsl::text:if( _or===undefined || (_ra ? changed(_r,_or) : _r!=_or )){>
+		<xsl::text:data=_=_r;>
+		<xsl::if(test="not(@transition)")
+			<xsl::choose
+				# FIXME: Using an explicit value would not work in transitions
+				<xsl::when(test="string-length(normalize-space($value))!=0")
+					<xsl::text:_v=>
+					<xsl::value-of(select=$value)
+					<xsl::text:;>
+				<xsl::otherwise
+					<xsl::call-template(name=value-formatter)
+						<xsl::with-param(name=formatter)
+							<xsl::value-of(select=$formatter)
+		<xsl::text:&#x000A;&#x0009;&#x0009;>
+		<xsl::value-of(select="$body")
+		<xsl::text:&#x000A;&#x0009;&#x0009;>
+		<xsl::call-template(name=value-cache)
+		<xsl::text:&#x000A;&#x0009;>
+		<xsl::if(test="$always!='true'")
+			<xsl::text:};>
+
+# EOF

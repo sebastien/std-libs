@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+# -----------------------------------------------------------------------------
+# Project           : JSXML/Inferno Stylesheet
+# -----------------------------------------------------------------------------
+# Author            : Sébastien Pierre
+# License           : BSD License
+# -----------------------------------------------------------------------------
+# Creation date     : 2016-09-06
+# Last modification : 2016-09-06
+# -----------------------------------------------------------------------------
+<xsl::stylesheet(version="1.0",xmlns::xsl="http://www.w3.org/1999/XSL/Transform",xmlns::jsx="https://github.com/sebastien/jsxml")
+
+	# SEE: https://github.com/trueadm/inferno/blob/master/README.md#hooks
+
+	# =========================================================================
+	# RENDERING INFORMATION
+	# =========================================================================
+	<xsl::template(name=inferno-rendering-information)
+		<xsl::text:inferno (2017-06-28/3.6.3)>
+
+	# =========================================================================
+	# HELPERS
+	# =========================================================================
+	<xsl::template(name=inferno-helpers)
+		<xsl::call-template(name=default-helpers)
+
+	# =========================================================================
+	# IMPORT NAMES
+	# =========================================================================
+	<xsl::template(name=inferno-import-names)
+		<xsl::text:"inferno", "inferno.createElement">
+
+	# =========================================================================
+	# IMPORT ARGUMENTS
+	# =========================================================================
+	<xsl::template(name=inferno-import-arguments)
+		<xsl::text:inferno, createElement>
+
+	# =========================================================================
+	# JSX CHILDREN
+	# =========================================================================
+	<xsl::template(name=inferno-jsx-children)
+		# NOTE: It would be much easier to use the spread syntax [...(EXPRESSION)]
+		<xsl::text:component.props.children>
+
+	# =========================================================================
+	# JSX COMPONENT
+	# =========================================================================
+
+	<xsl::template(name=inferno-jsx-component)
+		<xsl::param(name="name")
+		<xsl::text:component.ensureChild(">
+		<xsl::value-of(select="generate-id()")
+		<xsl::text:", new >
+		<xsl::value-of(select="$name")
+		# FIXME: This does not support passing children/props directly
+		<xsl::text:()).getVTree()>
+
+	# =========================================================================
+	# JSX ON
+	# =========================================================================
+
+	<xsl::template(name=inferno-jsx-on)
+		<xsl::param(name=name)
+		<xsl::param(name=value)
+		# on: prefixed attributes are capitalized
+		<xsl::text:"on>
+		<xsl::value-of(select="$name")
+		<xsl::text:":>
+		<xsl::value-of(select="$value")
+
+	# =========================================================================
+	# JSX HTML
+	# =========================================================================
+
+	<xsl::template(name=inferno-jsx-html)
+		# SEE: https://codepen.io/anon/pen/vLjLmw?editors=1010
+		# SEE: https://github.com/infernojs/inferno/issues/94
+		# FIXME: Apparently this does not work yet.
+		<xsl::text:function(){console.warn("Inferno JSXML backend does not support jsx:html yet");return {name:"onCreated", value:function(domNode){domNode.innerHTML=>
+		<xsl::call-template(name=helper-value-formatter)
+		<xsl::text:}}}()>
+
+	# =========================================================================
+	# COMPONENT
+	# =========================================================================
+
+	<xsl::template(name=inferno-component)
+		<xsl::param(name=content)
+		<xsl::text:function(component){>
+		<xsl::call-template(name=indentn-1)
+		# The createVDOM
+		<xsl::text:var createVDOM = function(data, attributes, children){>
+		<xsl::call-template(name=indentn-1)
+		<xsl::text:     var state=data;var _=data;var __context__=[];>
+		<xsl::choose
+			<xsl::when(test="count($content)=0")
+				# Element with no content
+				<xsl::text:&#x000A;/* &lt;jsx:component[empty]&gt; */>
+				<xsl::text(console.error("Component has no children"))
+				<xsl::text:/* &lt;/jsx:component&gt; */>
+			<xsl::when(test="count($content)=1")
+				# Element with 1 child
+				<xsl::text:&#x000A;/* &lt;jsx:component[single]&gt; */>
+				<xsl::text:&#x000A;>
+				<xsl::text:return (>
+				<xsl::apply-templates(select=$content): >
+				<xsl::text:)};>
+				<xsl::text:&#x000A;>
+				# <xsl::text@raw
+				# 	/* COMPONENT HOOKS */
+				# 	).setHooks({
+				# 	"attached":  function(event){component.onComponentAttached(event)},
+				# 	"created":   function(event){component.onComponentCreated(event)},
+				# 	"didUpdate": function(event){component.onComponentUpdated(event)}
+				# 	})};
+			<xsl::otherwise
+				# Element with many children
+				<xsl::text:&#x000A;/* &lt;jsx:component[multiple]&gt; */>
+				<xsl::text:return (createElement("div",{"className":"component"},>
+				<xsl::for-each(select="$content")
+					<xsl::apply-templates(select=".")
+					<xsl::if(test="position()!=last()")
+						<xsl::text:,>
+				<xsl::text:&#x000A;>
+				<xsl::text:))};>
+				<xsl::text:/* &lt;/jsx:component&gt; */>
+		# The end of the createVDOM
+		<xsl::call-template(name=indentn-1)
+		# The main rendering function
+		<xsl::call-template(name=indentn-1)
+		<xsl::text:return function(data,node){let t=createVDOM(data);return inferno.render(t, node);}>
+		<xsl::call-template(name=indentn)
+		<xsl::text:};>
+
+	# ==========================================================================
+	# ELEMENT PREFIX
+	# ==========================================================================
+	<xsl::template(match="*",name="inferno-element-prefix")
+		<xsl::call-template(name=indentn)
+		<xsl::text:createElement(>
+
+	# ==========================================================================
+	# ELEMENT SUFFIX
+	# ==========================================================================
+	<xsl::template(match="*",name="inferno-element-suffix")
+		<xsl::text:)>
+
+	# ==========================================================================
+	# ELEMENT NAME
+	# ==========================================================================
+	<xsl::template(match="*",name="inferno-element-name")
+		<xsl::param(name="name",select="name()")
+		# FIXME: $name might already be quoted, but not sure how this
+		# would work for composition.
+		<xsl::value-of(select="$name")
+		<xsl::text:,>
+
+	# ==========================================================================
+	# CLASS ATTRIBUTE NAME
+	# ==========================================================================
+
+	<xsl::template(match="*",name="inferno-attribute-name-class")
+		# FIXME: Not sure, it might need to be className
+		<xsl::text:class>
+
+	# ==========================================================================
+	# ELEMENT ATTRIBUTES
+	# ==========================================================================
+	# In this rule we need to separate the hooks from the attributes. 
+	# Right now, the supported hooks are:
+	# - jsx:as|ref
+	<xsl::template(match="*",name="inferno-element-attributes")
+		<xsl::param(name="attributes")
+		<xsl::param(name="key")
+		# NOTE: The following lines are pretty ugly, but that's the best
+		# we can do to partition the attributes into events/attrs/hooks.
+		<xsl::variable(name=attrs,select="$attributes[substring-before(name(),':')!='on' and substring-before(name(),':')!='action' and name()!='jsx:as' and name()!='jsx:ref' and name()!='created' and name()!='attached' and name()!='willDetach' and name()!='willUpdate' and name()!='willDidUpdate' and name()!='componentWillMount' and name()!='componentDidMount' and name()!='componentWillUnmount' and name()!='componentShouldUpdate' and name()!='componentWillUpdate' and name()!='componentDidUpdate']")
+		# <xsl::variable(name=hooks,select="$attributes[substring-before(name(),':')!='on' and substring-before(name(),':')!='action' and name() ='jsx:as' or  name() ='jsx:ref' or  name() ='created' or  name() ='attached' or  name() ='willDetach' or  name() ='willUpdate' or  name() ='willDidUpdate' or  name() ='componentWillMount' or  name() ='componentDidMount' or  name() ='componentWillUnmount' or  name() ='componentShouldUpdate' or  name() ='componentWillUpdate' or  name() ='componentDidUpdate']")
+		# <xsl::variable(name=events,select="$attributes[substring-before(name(),':')='on' or substring-before(name(),':')='action']")
+		# --- HOOKS ---------------------------------------------------------------
+		# <xsl::if(test="count($hooks)!=0")
+		# 	<xsl::text:&#x000A;&#x0009;.setHooks(>
+		# 	<xsl::call-template(name=helper-element-attributes)
+		# 		<xsl::with-param(name=attributes,select="$hooks")
+		# 	<xsl::text:)>
+		# # --- EVENTS -------------------------------------------------------------
+		# <xsl::if(test="count($events)!=0")
+		# 	<xsl::text:&#x000A;&#x0009;.setEvents({>
+		# 	<xsl::for-each(select="$events")
+		# 		<xsl::apply-templates(select=".")
+		# 		<xsl::if(test="position()!=last()")
+		# 			,
+		# 	<xsl::text:})>
+		# --- ATTRIBUTES ---------------------------------------------------------
+		<xsl::choose
+			<xsl::when(test="count($attributes)+count(jsx:attribute)!=0")
+				<xsl::call-template(name=helper-element-attributes)
+					<xsl::with-param(name=attributes,select="$attributes")
+					<xsl::with-param(name=key,select="$key")
+			<xsl::otherwise
+				<xsl::text:null>
+		<xsl::text:,>
+
+	# ==========================================================================
+	# ELEMENT CHILDREN
+	# ==========================================================================
+	<xsl::template(match="*",name="inferno-element-content")
+		<xsl::param(name="children")
+		<xsl::param(name="content")
+		<xsl::choose
+			<xsl::when(test="$content")
+				<xsl::value-of(select="$content")
+			<xsl::when(test="$children")
+				<xsl::call-template(name="helper-element-children-list")
+					<xsl::with-param(name=children,select="$children")
+			<xsl::otherwise
+				<xsl::text:null>
+
+
+# EOF - vim: ts=4 sw=4

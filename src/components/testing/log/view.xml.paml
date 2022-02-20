@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<div.Log-
+		<jsx::if(select=data.label)
+			<div.-title-
+				<h4.-text
+					<jsx::value(select=data.label)
+		<div.-items-
+			<jsx::for(select=data.value)
+				<jsx::if(test='typeof _ === "string"')
+					<div.-item__string
+						<jsx::value(select=_)
+				<jsx::else
+					<div.-item__object
+						<jsx::component(type=testing/introspector)
+							<jsx::option(name=value,select=_)
+# EOF

@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",render="delta")
+	# NOTE: This component exercises all the basic tags of JSXML
+	# FIXME: @jsx:as should be @jsx:ref
+	# TODO: remove @jsx:value, @jsx:map and @jsx:html
+	# TODO: add jsx:T
+	<style
+		.icon-square {
+			display: inline-block;
+			width: 1em;
+			height: 1em;
+			background: black;
+		}
+		.bg-green {
+			background: #00FF00;
+		}
+
+		.bg-red {
+			background: #FF0000;
+		}
+	<div.Texto
+		<h1:
+			JSXML-Level 1 Test Suite
+		<p
+			This test suite exercises the basic tags in JSXML. The second and third
+			column of each table should be the same, with the second one
+			being the expected result.
+		<p
+			The features tested are the following
+		<ul
+			<li:
+				<a(href=#text)
+					Text, content and attributes
+			<li:
+				<a(href=#jsx:value)
+					<code:jsx:value>
+			<li:
+				<a(href=#@jsx:value)
+					<code:@jsx:value=>
+			<li:
+				<a(href=#jsx:attribute)
+					<code:jsx:attribute>
+			<li:
+				<a(href=#jsx:html)
+					<code:jsx:html>
+			<li:
+				<a(href=#jsx:style)
+					<code:jsx:style>
+
+		<h2:Text, content and attributes
+
+		<section
+			<h3:DOM elements
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<th
+							Empty node
+						<td
+							<span
+						<td
+							<span
+					<tr
+						<th
+							Text node
+						<td
+							text
+						<td
+							text
+					<tr
+						<th
+							Whitespace
+						<td
+							Whitespace <span:around> nodes
+						<td
+							Whitespace<span: within >nodes
+					<tr
+						<th
+							Whitespace
+						<td
+							<div:Task #<code:0> is even (no space after #)
+						<td
+							<div:Task # <span:0 is even> (space after the #)
+					<tr
+						<th
+							Double Quotes
+						<td
+							string with " double quote
+						<td
+							string with " double quote
+					<tr
+						<th
+							Node with text
+						<td
+							<b
+								Node with text
+						<td
+							<b
+								Node with text
+					<tr
+						<th
+							Regular attribute
+						<td
+							<a(href=http://ffctn.com):ffctn.com
+						<td
+							<a(href=http://ffctn.com):ffctn.com
+					<tr
+						<th
+							<em:ID> attribute
+						<td
+							<span#TEST:#TEST>
+						<td
+							<span#TEST:#TEST>
+					<tr
+						<th
+							<em:Class> attribute
+						<td
+							<span.b:bold>
+						<td
+							<span.b:bold>
+					<tr
+						<th
+							Style attribute
+						<td
+							<div(style="display:inline-block;width:1.25em;height:1.25em;background-color:#00FF00;")
+						<td
+							<div(style="display:inline-block;width:1.25em;height:1.25em;background-color:#00FF00;")
+					<tr
+						<th
+							Image
+						<td
+							<img(src="https://ffctn.com/lib/images/social.png",width=400)
+						<td
+							<img(src="https://ffctn.com/lib/images/social.png",width=400)
+
+		<section
+			<h3:<code:jsx:value>
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td
+							<code:jsx:value @select> with <em:empty element>
+						<td
+							<b:Sample project
+						<td
+							<b
+								<jsx::value(select="data.project")
+					<tr
+						<td
+							<code:jsx:value @select> with <em:non-empty element>
+						<td
+							<b:Sample project
+						<td
+							<b
+								<jsx::value(select="data.project")
+					<tr
+						<td
+							<code:jsx:value @select> with <function element>
+						<td
+							<b:project: Sample project
+						<td
+							<b
+								<jsx::value(select="data.project")
+									"project: " + _
+					<tr
+						# NOTE: the children element are meant to be stripped and
+						# converted to a JS expression.
+						<td
+							<code:jsx:value @select> with <element> children
+							<div
+						<td
+							<b:project: Sample project
+						<td
+							<b:
+								<jsx::value(select=data.project)
+									"project: " + _
+					<tr
+						<td
+							<code:jsx:value @select + @as>
+						<td
+							<b:ACME, inc
+						<td
+							<b:
+								<jsx::value(select="data.company",as="c"):c.name>
+					<tr
+						<td
+							<code:jsx:value @select + @as> and nested accessor
+						<td
+							<b:ACME, inc
+						<td
+							<b:
+								<jsx::value(select="data.company.name",as="c")
+					<tr
+						<td
+							Whitespace in values
+						<td
+							<b
+								Sample project ACME, inc (http://acme.inc)
+						<td
+							<b
+								<jsx::value(select=data.project):> <jsx::value(select=data.company.name):> (<jsx::value(select=data.company.url):>)
+
+		<section
+			<h3:<code:@jsx:value>
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td:<code:@jsx:value> as an empty node
+						<td
+							<code.b:4
+						<td
+							<code.b(jsx::value="_.tasks.length")
+					<tr
+						<td:<code:@jsx:value> with a default value
+						<td
+							<code.b
+								4
+						<td
+							<code.b(jsx::value="_.tasks.length")
+								<b:N/A
+					<tr
+						<td:<code:@jsx:value> with a default value when the main value fails
+						<td
+							<code.b
+								<b:N/A
+						<td
+							<code.b(jsx::value="_.tasks.undefined")
+								<b:N/A
+					<tr
+						<td:<code:@jsx:value + @jsx:select>
+						<td
+							<code.b
+								4
+						<td
+							<code.b(jsx::value="_.length",jsx::select="data.tasks")
+								<b:0
+					<tr
+						<td:<code:@jsx:value + default value>
+						<td
+							<code
+								<b:true
+						<td
+							<code(jsx::value="_.undefined")
+								<b:true
+
+		<section
+			<h3:<code:jsx:attribute> with regular attributes
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td
+							<em:@name and @select
+						<td
+							<a(href="http://acme.inc"):http://acme.inc>
+						<td
+							<a
+								<jsx::attribute(name=href,select=data.company.url)
+								<jsx::value(select=data.company.url)
+					<tr
+						<td
+							<em:@name and @select with #text
+						<td
+							<a(href="http://acme.inc"):http://acme.inc>
+						<td
+							<a
+								<jsx::attribute(name=href,select=data.company.url):_ + "#cache">
+								<jsx::value(select=data.company.url)
+					<tr
+						<td
+							<em:@name, @select and @as with #text
+						<td
+							<a(href="http://acme.inc"):http://acme.inc>
+						<td
+							<a
+								<jsx::attribute(name=href,select=data.company.url,as="url"):url + "#cache">
+								<jsx::value(select=data.company.url)
+
+		<section
+			<h3:<code:jsx:attribute> with <em:class attribute>
+
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<th
+							<em:Class attribute <em:do=set>
+						<td
+							<div.bg-green.icon-square:
+						<td
+							<div.bg-red.icon-square
+								<jsx::attribute(name=class):"bg-green icon-square">
+					<tr
+						<th
+							<em:Class attribute <em:@do=append>
+						<td
+							<div.icon-square.bg-green
+						<td
+							<div.icon-square
+								<jsx::attribute(name=class,do=append):"bg-green">
+					<tr
+						<th
+							<em:Class attribute append two
+						<td
+							<div.icon-square.bg-green
+						<td
+							<div
+								<jsx::attribute(name=class,do=append):"icon-square">
+								<jsx::attribute(name=class,do=append):"bg-green">
+
+		<section
+			<h3:<code:jsx:attribute> with <em:style attribute>
+			<table.block-table__horizontal
+
+				<tbody
+					<tr
+						<th
+							<em:Class attribute append two
+						<td
+							<div.icon-square.bg-green(style="background:green;")
+						<td
+							<div.icon-square
+								<jsx::attribute(name=style):{background:"green"}
+		# TODO: jsx-attribute @when
+
+		<section
+			<h3:<code:jsx:html>
+			<table.block-table__horizontal
+				<tbody
+					<tr
+						<td
+							<code:jsx:html>
+						<td
+							<em:Hello, world!
+						<td
+							<jsx::html@raw
+								"&lt;em&gt;Hello, world!&lt;/em&gt;"
+					<tr
+						<td
+							<code:jsx:html @select>
+						<td
+							<b:Sample project
+						<td
+							<b
+								<jsx::html(select=data.project)
+					<tr
+						<td
+							<em:With @select and @as
+						<td
+							<b:Sample project
+						<td
+							<b
+								<jsx::html(select=data.project,as=name):name
+
+		<h3:<code:jsx:style>
+
+		<table.block-table__horizontal
+			<tbody
+				<tr
+					<td
+						<em:jsx:style> only
+					<td
+						<div(style="color:rgb(0,255,0);"):■
+					<td
+						<div:■
+							<jsx::style(name="color"):"rgb(0,255,0)"
+				<tr
+					<td
+						<em:jsx:style> overriding an inline style attribute
+					<td
+						<div(style="color:rgb(0,255,0);"):■
+					<td
+						<div(style="color:red;"):■
+							<jsx::style(name="color"):"rgb(0,255,0)"
+				<tr
+					<td
+						Multiple <em:jsx:style> on different properties
+					<td
+						<div(style="color:rgb(0,255,0);font-size:200%"):■
+					<td
+						<div:■
+							<jsx::style(name="color"):"rgb(0,255,0)"
+							<jsx::style(name="font-size"):100 * 2 + "%"
+				<tr
+					<td
+						Multiple <em:jsx:style> on same properties
+					<td
+						<div(style="color:rgb(0,255,0);"):■
+					<td
+						<div:■
+							<jsx::style(name="color"):"red"
+							<jsx::style(name="color"):"rgb(0,255,0)"
+				<tr
+					<td
+						Multiple <em:jsx:style> along with <em:jsx:attribute @name=style>
+					<td
+						<div(style="color:rgb(0,255,0)"):■
+					<td
+						<div:■
+							<jsx::attribute(name="style"):{color:"red"}
+							<jsx::style(name="color"):"rgb(0,255,0)"
+
+# EOF 

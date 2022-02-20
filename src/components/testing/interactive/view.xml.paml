@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<jsx::import(name=EventType,from=std.util.testing)
+	<div.Block.Interactive
+		<div.summary
+			<h3(jsx::value=data.name)
+				No name
+			<div.description(jsx::value=data.description)
+				No description
+		<div.e-actions
+			<button(on::click="action:run"):Run
+		<div.e-output
+			<div(jsx::ref="output")
+		<div
+			<h4:Checklist
+			<div.e-checklist
+				<jsx::template(name=checklist)
+					<ul.checklist
+						<li(jsx::map=data)
+							<jsx::attribute(name=class,do=add):_.children ? "node" : "leaf"
+							<input(type=checkbox,on::change="action:toggleItem")
+								<jsx::attribute(name="id"):_.key
+								<jsx::attribute(name="checked"):_.checked ? '' : null
+							<label.message
+								<jsx::attribute(name="for"):_.key
+								<jsx::value:"" + _.item
+							<jsx::if(select="_.children",test="_ &amp;&amp; _.length &gt; 0")
+								<jsx::apply(template=checklist,select="_")
+				<jsx::apply(template=checklist,select="data._checklist")
+
+# EOF

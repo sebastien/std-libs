@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/extra/on",render="delta")
+	<jsx::import(component=jsxml/embedded,as=Embedded)
+	<div.Texto
+		<h1:
+			JSXML-Level 2 Test Case
+		<p
+			Tests <em:level 2> features of JSXML, which include advanced topics
+			such as templates and components.
+
+		<ul
+			<li
+				<a(href=#jsx:ref)
+					References <code:@jsx:ref={name}> and <code:jsx:ref>
+			<li:
+				<a(href=#jsx:template)
+					Templates <code:jsx:template> and <code:jsx:apply>
+			<li:
+				<a(href=#@on)
+					Event handlers <code:@on:{event}={name}>
+			<li:
+				<a(href=#jsx:t)
+					I18N <code:jsx:t:{string}>
+			<li:
+				<a(href=#jsx:import)
+					Dynamic loading <code:jsx:import @name @from @as>
+			<li:
+				<a(href=#jsx:component)
+					Composition of components <code:jsx:component @name>
+			<li:
+				<a(href=#jsx:options)
+					Passing component options <code:jsx:options>
+			<li:
+				<a(href=#jsx:children)
+					Passing component content <code:jsx:children>
+			<li:
+				<a(href=#x:namespace)
+					Component <code:x:*> namespace
+
+		<section
+			<h3:<code:jsx:template> and <code:jsx:apply>
+
+			<jsx::template(name="template_simple")
+				Hello, World!
+
+			<jsx::template(name="template_value")
+				<jsx::value:10 * 10 + "%"
+
+			<jsx::template(name="template_select")
+				<jsx::value:_.length + " tasks"
+
+			<jsx::template(name="template_recursive")
+				<ul
+					<jsx::for(select=_)
+						<li
+							<jsx::value(select=_.name)
+							# FYI: The jsx:if was problematic in a deltaopt version, so
+							# it might be tricky to get right.
+							<jsx::if(select=_.children)
+								<jsx::apply(select=_.children,template=template_recursive)
+			<table.test
+				<tbody
+					<tr
+						<th
+							<code:jsx:template @select> with <em:simple string element>
+						<td
+							Hello, World
+						<td
+							<jsx::apply(template=template_simple)
+					<tr
+						<th
+							<code:jsx:template @select> with <em:a dynamic value>
+						<td
+							100%
+						<td
+							<jsx::apply(template=template_value)
+					<tr
+						<th
+							<code:jsx:template @select> with <em:a selected value>
+						<td
+							4 tasks
+						<td
+							<jsx::apply(template=template_select,select="data.tasks")
+					<tr
+						<th
+							<code:jsx:template @select> with <em:a selected value>
+						<td
+							<ul
+								<li:item 1
+								<li:item 2
+									<ul
+										<li:item 2.1
+										<li:item 2.2
+						<td
+							<jsx::apply(template=template_recursive,select="data.todo")
+
+		<section
+			<h3:<code:@jsx:ref> and <code:jsx:ref>
+			<table.test
+				<tbody
+					<tr
+						<td
+							<code:@jsx:ref>
+						<td
+							<em:There is no direct way to check this>
+						<td
+								<div(jsx::ref="refattr"):Ref. as "refattr"
+					# NOTE: These two forms are disabled, because I don't see 
+					# a use case for a non-Element ref, and the whole thing
+					# complicates the logic quite a lot.
+					# <tr
+					# 	<td
+					# 		<code:jsx:ref>
+					# 	<td
+					# 		<em:There is no direct way to check this>
+					# 	<td
+					# 		<div
+					# 			<jsx::ref(name=reftag):Ref. as "reftag"
+					# <tr
+					# 	<td
+					# 		<code:jsx:ref when> 
+					# 	<td
+					# 		<em:There is no direct way to check this>
+					# 	<td
+					# 		<div
+					# 			<jsx::ref(name=refcond,when='1==1'):Ref. as "refcond"
+
+		<section
+			<h3:<code:on:{event}>
+			<table.test
+				<tbody
+					<tr
+						<th
+							<code:@on:click> with a JavaScript callback
+						<td
+							<em:Clicking on the button should trigger an alert
+						<td
+							<button.block-button(on::click='function(){alert("Clicked")}')
+								Click me
+		<section
+			<h3:<code:jsx:import>
+			<jsx::import(name=len,from=std.core)
+			<jsx::import(name=len,from=std.core,as=altlen)
+			<table.test
+				<tbody
+					<tr
+						<td
+							<code:jsx:import @name @from>
+						<td
+							5
+						<td
+							<jsx::value:len([0,1,2,3,4])
+					<tr
+						<td
+							<code:jsx:import @name @from> with <em:alternate name>
+						<td
+							6
+						<td
+							<jsx::value:altlen([0,1,2,3,4,5])
+
+		<section
+			<h3:<code:jsx:component>
+			<table.test
+				<tbody
+					<tr
+						<th
+							<code:jsx:component>
+						<td
+							Hello, world!
+						<td
+							<jsx::component(type=jsxml/helloworld)
+					<tr
+						<th
+							<code:jsx:component @jsx:ref>
+						<td
+							Hello, world!
+						<td
+							<jsx::component(type=jsxml/helloworld,jsx::ref=helloworld)
+
+	
+					<tr
+						<th
+							<code:jsx:children>
+						<td
+							<div.block-frame
+								<h4:Embedded Component
+								<p:Default text value for the embedded component.
+								<p:Lorem ipsum dolor sit amet.
+						<td
+							<jsx::component(type=jsxml/embedded)
+								<p:Lorem ipsum dolor sit amet.
+
+						# TODO: jsx:children with @jsx:map
+						# TODO: jsx:children with @for
+						# TODO: jsx:children with @if
+					<tr
+						<th
+							<code:jsx:option>
+						<td
+							<div.block-frame
+								<h4:Embedded Component
+								<p:Hello, world>
+						<td
+							<jsx::component(type=jsxml/embedded)
+								<jsx::option(name="text"):"Hello, world!"
+							# TODO: Using select
+							# <jsx::option(name="text",select=message);_
+							# <jsx::option(name="text",select=message,as=message):message
+		<section
+			<h3:<code:jsx:*>
+			<table.test
+				<tbody
+					<tr
+						<th
+							<code:jsx:*>
+						<td
+							<h4:Embedded Component
+							<p:Lorem ipsum dolor sit amet.
+						<td
+							<jsx::Embedded
+					<tr
+						<th
+							<code:jsx:* with option>
+						<td
+							<h4:Embedded Component
+							<p:Hello, world!
+						<td
+							<jsx::Embedded(text="Hello, world!")
+
+	
+					<tr
+						<th
+							<code:jsx:children>
+						<td
+							<div.block-frame
+								<h4:Embedded Component
+								<p:Default text value for the embedded component.
+								<p:Lorem ipsum dolor sit amet.
+						<td
+							<jsx::Embedded
+								<p:Lorem ipsum dolor sit amet.
+
+
+		# # @jsx:children
+
+		# @on
+	
+# EOF

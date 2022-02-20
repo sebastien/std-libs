@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<jsx::import(name=EventType,from=std.util.testing)
+	<jsx::import(name=Value,from=std.util.testing)
+	<jsx::import(name=prim,from=std.core)
+	<jsx::import(name=json,from=std.core)
+	<jsx::import(name=scale,from=std.math)
+	<div.Block.Benchmark-
+		<div.-summary
+			<h3(jsx::value=data.results.name)
+				No name
+			<div.-description(jsx::value=data.results.description)
+				No description
+		<div.-events
+			<table(cellpadding=0,cellspacing=0,width=100%)
+				<tbody
+					<tr.-event-(jsx::map=data.results.events,jsx::as="event")
+						<td.-status
+							<jsx::attribute(name=data-state,select=event.status.__name__):"" + _.toLowerCase()>
+						<td.-message
+							<jsx::value(select="_.operation.name")
+						<td.-rank-
+							<div.-wrapper
+								<div.-mark
+									<jsx::style(name=left):(scale(_.duration, _.metrics.max, 100 ) + "%")
+						<td.-duration-.block-pre
+								<div.-value
+								<jsx::if(test="_.duration")
+									<jsx::value(select="_"):"" + (Math.floor(100*_.duration)/100)
+									<span.-unit:
+										ms
+								<jsx::else
+									Running‥
+		<div.block-actions
+			<button.block-button(on::click="action:run"):
+				<span:Run × >
+				<jsx::value(select=data.results.options.cycles)
+# EOF

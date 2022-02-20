@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" media="screen" href="../../../lib/xsl/jsxml.xsl"?>
+<jsx::Component(xmlns::jsx="https://github.com/sebastien/jsxml",xmlns::on="https://github.com/sebastien/jsxml/actions",render="delta")
+	<jsx::import(name=json,from=std.core)
+	<jsx::import(name=typename,from=std.core)
+	<jsx::import(name=type,from=std.core)
+	# -------------------------------------------------------------------------
+	#
+	# TEMPLATE
+	#
+	# -------------------------------------------------------------------------
+	<jsx::template(name=formatter)
+		<jsx::argument(name=level,default=0)
+		<jsx::argument(name=path,default="''")
+		<jsx::if(test="gt(level, 10)")
+			<code:‥>
+		<jsx::elif(test="_ === true || _ === false || _ === undefined || _ === null")
+			<code.Introspector-symbol
+				<jsx::value:"" + _
+		<jsx::elif(test="_ === Function")
+			<code.Introspector-function__abstract:Function>
+		<jsx::elif(test="_ === Array")
+			<code.Introspector-array__abstract:Array>
+		<jsx::elif(test="_ === Object")
+			<code.Introspector-object__abstract:Object>
+		<jsx::elif(test="typeof(_) == 'string'")
+			<code.Introspector-string
+				<jsx::value(select=_)
+		<jsx::elif(test="typeof(_) == 'number'")
+			<code.Introspector-number
+				<jsx::value:"" + _
+		<jsx::elif(test="_ instanceof Function")
+			<span.Introspector-function:
+				<jsx::value:_.label || ""
+		<jsx::elif(test="_.type == 'array'")
+			<div.Introspector-array-(data-composite=true)
+				<jsx::attribute(name=data-path,select=path):_ ? _ + "." + index : "" + (index || "")
+				<jsx::attribute(name=data-state,select=_.expanded):_ ? "expanded" : ""
+				<span.-type:Array
+				<span.-arity
+					<jsx::value:_.length
+				<span.-items
+					<span.-item(jsx::map=_.values)
+						<jsx::attribute(name=data-index):"" + index
+						<jsx::apply(template=formatter)
+							<jsx::argument(name=level,select=level):_ + 1
+		<jsx::else
+			<div.Introspector-object-(data-composite=true)
+				<jsx::attribute(name=data-path,select=path):_ ? _ + "." + index : "" + (index || "")
+				<jsx::attribute(name=data-state,select=_.expanded):_ ? "expanded" : ""
+				<span.-type:Object
+				<span.-arity
+					<jsx::value:_.length
+				<span.-items
+					<span.-item-(jsx::map=_.values)
+						<span.-key
+							<jsx::value:"" + index
+						<span.-value
+							<jsx::apply(template=formatter)
+								<jsx::argument(name=level,select=level):_ + 1
+								<jsx::argument(name=path,select=path):_ ? _ + "." + index : "" + index
+	# -------------------------------------------------------------------------
+	#
+	# INTROSPECTOR
+	#
+	# -------------------------------------------------------------------------
+	<div.Introspector-(on::click=action:toggleValue)
+		<jsx::if(select=data.label)
+			<span.-name:
+				<jsx::value(select=data.label)
+		<jsx::apply(template=formatter,select=_.visible,always)
+			<jsx::argument(name=level):0
+
+# EOF

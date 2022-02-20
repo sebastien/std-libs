@@ -1,0 +1,45 @@
+.InteractiveTest-
+	border: 1px solid #00000020
+	background: white
+	box-shadow: 3px 3px 5px #00000020
+	.-summary-:
+		padding: 15px
+		border-bottom: 1px solid #00000020
+		.-name:
+			text-transform: capitalize
+	.-checklist-:
+		padding: 15px
+		h4:
+			margin-bottom: 5px
+		.-item-:
+			.-description-:
+				display: flex
+				border-radius: 4px
+				padding: 4px
+				cursor: pointer
+				&:hover:
+					background-color: #00000010
+				&:before:
+					content: "☐"
+					margin-right: 10px
+					opacity: 0.5
+				&!success:before:
+					content: "🗹 "
+				&!failure:before:
+					content: "🗷"
+	.-results-:
+		padding: 15px
+		.-item-:
+			.-runs-:
+				.-run:
+					display: inline-block
+					width:  10px
+					height: 10px
+					margin-right:  0px
+					margin-bottom: 0px
+					border: 1px solid #E0E0E0
+					&!success:
+						background-color: #E0E0E0
+	.-actions-:
+		padding: 15px
+		padding-top: 5px

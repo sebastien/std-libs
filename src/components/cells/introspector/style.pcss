@@ -1,0 +1,86 @@
+// NOTE: This does not work
+// @import url(../../../lib/pcss/blocks.pcss)
+
+@macro t-cell-type
+	font-weight: 800
+
+@macro t-cell-name
+	position: relative
+	background-color: #000000E0
+	color: white
+	font-weight: bold
+	padding: 0.1em
+	padding-left: 0.5em
+	padding-right: 0.5em
+	border-radius: 1.25em
+
+.cells-events-
+	.-event-
+		border-top: 1px solid #303030
+
+.cells-Introspector-
+	display: flex
+	.-components-:
+		.-panel:
+			height: 200px
+			position: relative
+	.-cells-:
+		flex-grow: 1
+		.-panel:
+			height: 200px
+			position: relative
+		.-cell-
+			.-type-:
+				t-cell-type()
+			.-name-:
+				t-cell-name()
+				margin-right: 5px
+			.-value-value:
+				margin-top: 5px
+	.-graph-
+		flex-grow: 1
+		margin-left:  10px
+		margin-right: 10px
+		position: relative
+		.-svg:
+			position: absolute
+		.-edge
+			stroke: black
+			stroke-width: 2px
+		.-node
+			fill: black
+			stroke: #000000E0
+			stroke-width: 3px
+		.-labels-:
+			position: absolute
+			.-label-
+				position: absolute
+				font-family: "Work Sans"
+				transform: translateX(-50%)
+				text-align: center
+				.-name:
+					t-cell-name()
+					font-size: 13px
+					position: relative
+					top: -0.75em
+				.-type:
+					t-cell-type()
+					font-size: 10px
+					position: relative
+					text-shadow: 0px 2px 2px white
+					top: 1.25em
+
+		.-tooltip:
+			position: absolute
+			background: #000000F0
+			border-radius: 4px
+			box-shadow: 0px 0px 3px #00000010
+			padding: 10px
+			color: white
+			font-size: 12px
+			opacity: 0.0
+			z-index: 0
+			&.active:
+				opacity: 1.0
+				z-index: 100
+		
